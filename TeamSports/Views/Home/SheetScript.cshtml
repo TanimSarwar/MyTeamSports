@@ -1,0 +1,31 @@
+﻿@{
+    ViewData["Title"] = "Waiting for script conformation";
+}
+
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    $(document).ready(function () {
+        var data = '@ViewBag.Data';
+        if (data == "False") {
+            Swal.fire("Check box might not be added. You can try manually to do it", "", "info");
+        } else {
+            Swal.fire("Check box were added", "", "success");
+        }
+
+        setTimeout(() => { window.location.href = "/"; }, 2000)
+
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+</script>

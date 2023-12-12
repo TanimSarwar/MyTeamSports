@@ -1,0 +1,595 @@
+@{
+    ViewData["Title"] = "Brand Wise File Upload";
+}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css" />
+
+<div class="card card-custom gutter-b example example-compact" id="summary">
+    <div class="card-header">
+        <h3 class="card-title">Summary Data</h3>
+    </div>
+    <div class="card-body">
+        <div class="row m-0">
+            <div class="col bg-light-danger px-4 py-8 rounded-xl mr-7 mb-7" onclick="Get_ALT_Data(4)" style="cursor: pointer; text-align:center">
+                <span class="text-danger font-weight-bold font-size-h6" id="New_ART_ALT"></span>
+            </div>
+
+             <div class="col bg-light-info px-4 py-8 rounded-xl mr-7 mb-7" onclick="Get_ALT_Data(5)" style="cursor: pointer;text-align:center">
+                <span class="text-info font-weight-bold font-size-h6" id="Old_ART_ALT"></span>
+            </div>
+
+            <div class="col bg-light-warning px-4 py-8 rounded-xl mr-7 mb-7" onclick="Get_ALT_Data(1)" style="cursor: pointer;text-align:center">
+                <span class="text-warning font-weight-bold font-size-h6" id="price_ALT"></span>
+            </div>
+
+            <div class="col bg-light-primary px-4 py-8 rounded-xl  mr-7 mb-7" onclick="Get_ALT_Data(2)" style="cursor: pointer;text-align:center">
+                <span class="text-primary font-weight-bold font-size-h6" id="size_ALT"></span>
+            </div>
+
+            <div class="col bg-light-success px-4 py-8 rounded-xl  mr-7 mb-7" onclick="Get_ALT_Data(3)" style="cursor: pointer;text-align:center">
+                <span class="text-success font-weight-bold font-size-h6" id="color_ALT"></span>
+            </div>
+
+
+
+
+
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="card card-custom gutter-b example example-compact" id="form">
+    <div class="card-header">
+        <h3 class="card-title">Brand Wise File Upload</h3>
+    </div>
+    <div class="card-body">
+        <div class="form-group row">
+            <label class="col-form-label text-right col-lg-3 col-sm-12">Brand Name</label>
+            <div class="col-lg-4 col-md-9 col-sm-12">
+                <select class="form-control" id="brand_name" name="param">
+                </select>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-form-label text-right col-lg-3 col-sm-12">Choose Files</label>
+            <div class="col-lg-4 col-md-9 col-sm-12">
+                <input type="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="form-control" autocomplete="off" id="mainsheet" style="text-transform:uppercase">
+            </div>
+        </div>
+    </div>
+    <div class="card-footer">
+        <div class="row">
+            <div class="col-lg-12 ml-lg-auto">
+                <button class="btn btn-primary mr-2" id="submitBtn">Submit</button>
+                <button type="reset" class="btn btn-secondary" onclick="cancel()">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="card card-custom gutter-b example example-compact" id="PUSHTODB">
+    <div class="card-header">
+        <h3 class="card-title" id="brandName">Upload Data</h3>
+        <div class="d-flex align-items-center">
+            <label class="checkbox checkbox-lg checkbox-light-success checkbox-inline flex-shrink-0 m-0 mx-4">
+                <input type="checkbox" name="select" value="1" disabled>
+                <span></span>
+            </label>
+            <div class="d-flex flex-column flex-grow-1">
+                <a class="text-dark-75 text-hover-primary font-weight-bold font-size-lg mb-1">
+                    New Article
+                </a>
+            </div>
+        </div>
+        <div class="d-flex align-items-center">
+            <label class="checkbox checkbox-lg checkbox-light-danger checkbox-inline flex-shrink-0 m-0 mx-4">
+                <input type="checkbox" name="select" value="1" disabled>
+                <span></span>
+            </label>
+            <div class="d-flex flex-column flex-grow-1">
+                <a class="text-dark-75 text-hover-primary font-weight-bold font-size-lg mb-1">
+                    Existing Article & Will Be Updated
+                </a>
+            </div>
+        </div>
+    </div>
+    <!--begin::Form-->
+    <div class="card-body">
+        <table id="examples" class="table table-bordered dataTable" cellspacing="0">
+            <thead id="ART_WISE_DT_HEAD">
+            </thead>
+            <tbody id="ART_WISE_DT_BODY"></tbody>
+        </table>
+    </div>
+    <div class="card-footer">
+        <div class="row">
+            <div class="col-lg-12 ml-lg-auto">
+                <button type="reset" class="btn btn-primary mr-2" onclick="PUSH_MAINDB()">Push to Main DB/Sheet</button>
+                <button type="reset" class="btn btn-danger" onclick="DISCARD()">Discard</button>
+            </div>
+        </div>
+    </div>
+    <!--end::Form-->
+</div>
+
+<!-- Modal-->
+<div class="modal fade" id="ALT_MODAL" tabindex="-1" role="dialog" aria-labelledby="staticBackdrop" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Modal Title</h5>
+               <a data-dismiss="modal" class="btn btn-light-danger btn-sm"><i class="flaticon-cancel"></i> Close</a>
+
+               
+
+               
+
+            </div>
+            <div class="modal-body">
+                <div data-scroll="true" style="box-sizing: content-box; width: auto; padding-right: 0px;">
+
+                   <table id="alt_tbl" class="table table-bordered dataTable" cellspacing="0">
+            <thead>
+                <tr>
+                                <th style="text-align:center;">#</th>
+                                <th style="text-align:center;">Brand</th>
+                                <th style="text-align:center;">Product ID</th>
+                                <th style="text-align:center;">Product Name</th>
+                                <th style="text-align:center;">Size</th>
+                                <th style="text-align:center;">Color</th>
+                                <th style="text-align:center;">Price</th>
+                                <th style="text-align:center;">Delete</th>
+                            </tr>
+            </thead>
+            <tbody id="alt_tbl_bdy"></tbody>
+        </table>
+                    <div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light-primary font-weight-bold" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="assets/plugins/global/plugins.bundle.js"></script>
+   <script src="assets/js/scripts.bundle.js"></script>
+   <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+   <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+
+<script src="assets/js/pages/crud/forms/widgets/select2.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+
+
+
+<script>
+    $(document).ready(function () {
+        GetDD_Data();
+        $("#PUSHTODB").hide();
+        $("#summary").hide();
+        Get_DB_Data();
+
+    });
+
+
+    function GetDD_Data() {
+        var vType = 1;
+        $.ajax({
+            url: "/Home/GetDD_DATA",
+            type: "POST",
+            dataType: "json",
+            data: {
+                _type: vType
+            },
+            success: function (response) {
+                {
+                    $('select#brand_name').html('');
+                    var result = '';
+                    result += "<option value='1'>Select a Brand</option>";
+
+                    if (response?.length > 0) {
+                        for (var i = 0; response?.length > i; i++) {
+                            result += "<option value='" + response[i].ID + "'>" + response[i].NAME + "</option>";
+                        }
+                    }
+                    $('select#brand_name').append(result);
+                }
+            },
+            error: function (response) {
+
+            }
+        });
+    }
+
+    $("#submitBtn").click(function () {
+        var _fileType = "Brand";
+        var _brandID = $("#brand_name :selected").val();
+        var _brandName = $("#brand_name :selected").text();
+        var fileInput = document.getElementById('mainsheet');
+        var _file = fileInput.files[0];
+        var formData = new FormData();
+        formData.append('excelFile', _file);
+        formData.append('vFileType', _fileType);
+        formData.append('vBrandID', _brandID);
+        formData.append('vBrandName', _brandName);
+        swal.showLoading();
+        var startdt = new Date();
+        $.ajax({
+            type: "POST",
+            url: "/Home/ImportExcelFile",
+            data: formData,
+            contentType: false,
+            processData: false,
+            async: true,
+            success: function (response) {
+                swal.close();
+                console.log("Reposnse After Processing file", response);
+                if (response) {
+
+                    Get_DB_Data();
+
+
+                }
+
+                //var startdt1 = new Date();
+                //swal.fire(response + "    :" + startdt + "    :" + startdt1);
+
+
+            },
+            error: function (response) {
+                swal.close();
+            }
+        });
+    });
+
+    function DISCARD() {
+
+
+        Swal.fire({
+            title: "Do you want to discard the articles?",
+            icon: "question",
+            showDenyButton: true,
+            showCancelButton: true,
+            confirmButtonText: "Yes",
+            denyButtonText: `No`,
+                allowEscapeKey: false,
+                allowOutsideClick: false,
+        }).then((result) => {
+            /* Read more about isConfirmed, isDenied below */
+            if (result.isConfirmed) {
+
+                $.ajax({
+                    url: "/Home/DISCARD_TEMP_DB",
+                    type: "POST",
+                    dataType: "json",
+                    data: {
+                    },
+                    success: function (response) {
+                        {
+                            swal.close();
+                            Swal.fire(
+                                'Successful!',
+                                'File Upload Discarded!!',
+                                'success'
+                            )
+
+                            setTimeout(function () {
+                                window.location.reload();
+                            }, 1500);
+                        }
+                    },
+                    error: function (response) {
+                        swal.close();
+                    }
+                });
+
+            } else if (result.isDenied) {
+                swal.close();
+                Swal.fire("Changes are not saved", "", "info");
+            }
+        });
+
+
+
+
+
+    }
+
+    function Get_DB_Data() {
+        swal.showLoading();
+        $.ajax({
+            url: "/Home/Get_DB_DATA",
+            type: "POST",
+            dataType: "json",
+            success: function (response) {
+                {
+                    swal.close();
+                    console.log("Generating Data: ", response);
+                    if (response?.status && response?.body?.length > 0) {
+                        $("#brandName").html(response?.body[0]["BRAND"]);
+                        $("#PUSHTODB").show();
+                        $("#form").hide();
+                        var resultBody = "";
+                        var resultHead = "";
+                        resultHead += "<tr>";
+                        for (var i = 1; i < response?.header.length; i++) {
+                            resultHead += "<td style='text-align:center;'>" + response?.header[i] + "</td>";
+                        }
+                        resultHead += "</tr>";
+                        console.log("a");
+                        for (var i = 1; i < response?.body.length; i++) {
+                            if (response?.body[i].ISEXIST == 1) {
+                                resultBody += "<tr style='background-color:#FFE2E5 !important'>";
+                            }
+                            else {
+                                resultBody += "<tr style='background-color:#c9f7f5 !important'>";
+                            }
+
+                            for (var j = 1; j < response?.header.length; j++) {
+                                var colName = response?.header[j];
+                                resultBody += "<td style='text-align:center;'>" + response?.body[i][colName] + "</td>";
+                            }
+                            resultBody += "</tr>";
+                            resultBody += "</tr>";
+                        }
+                        $("#ART_WISE_DT_HEAD").empty();
+                        $("#ART_WISE_DT_BODY").empty();
+                        $('#ART_WISE_DT_HEAD').append(resultHead);
+                        $('#ART_WISE_DT_BODY').append(resultBody);
+                        swal.close();
+
+                        new DataTable('#examples', {
+                            scrollX: true
+                        });
+                        Get_ALT_Data(0);
+                    }
+                }
+            },
+            error: function (response) {
+                swal.close();
+            }
+        });
+    }
+
+
+    function Get_ALT_Data(type) {
+        swal.showLoading();
+        $.ajax({
+            url: "/Home/GET_ALT_DATA",
+            type: "POST",
+            dataType: "json",
+            data: {
+                _TYPE: type
+            },
+            success: function (response) {
+                {
+                    swal.close();
+                    console.log("GET_ALT_DATA", response);
+                    {
+                        if (type == 0) {
+                            if (response[0].QTY > 0 || response[1].QTY > 0 || response[2].QTY > 0) {
+                                $("#summary").show();
+                                $("#color_ALT").html("");
+                                $("#size_ALT").html("");
+                                $("#price_ALT").html("");
+                                $("#New_ART_ALT").html("");
+                                $("#New_ART_ALT").html("<a class='btn btn-xs btn-icon btn-light-danger mr-2'><i class='far fa-plus-square'></i></a>New: " +response[3].QTY);
+                                $("#Old_ART_ALT").html("<a class='btn btn-xs btn-icon btn-light-info mr-2'><i class='fas fa-trash-alt'></i></a>Removed: " +response[3].QTY);//response 4 hbe 
+                                $("#color_ALT").html("<a class='btn btn-xs btn-icon btn-light-success mr-2'><i class='fas fa-highlighter'></i></a>Color Alter: "+response[2].QTY);
+                                $("#size_ALT").html("<a class='btn btn-xs btn-icon btn-light-primary mr-2'><i class='fas fa-tape'></i></a>Size Alter: "+response[1].QTY);
+                                $("#price_ALT").html("<a class='btn btn-xs btn-icon btn-light-warning mr-2'><i class='far fa-money-bill-alt'></i></a>Price Alter: "+response[0].QTY);
+                            }
+                        }
+
+
+                        else {
+
+                            const typeMessages = {
+                                            1: "List of Articles with altered PRICE",
+                                            2: "List of Articles with altered SIZE",
+                                            3: "List of Articles with altered COLOR",
+                                            4: "List of New (Non Existing) Articles",
+                                            5: "List of Articles that will be deleted"
+                                        };
+
+                            const message = typeMessages[type];
+                            $("#exampleModalLabel").html(message);
+
+                              $("#alt_tbl_bdy").empty();
+                     new DataTable('#alt_tbl').clear();
+                     new DataTable('#alt_tbl').destroy();
+                            var resultBody = "";
+
+
+                            for (var i = 0; i < response.length; i++) {
+                                resultBody += "<tr>";
+                                resultBody += "<td style='text-align:center;'>" + i + "</td>";
+                                resultBody += "<td style='text-align:center;'>" + response[i].BRAND + "</td>";
+                                resultBody += "<td style='text-align:center;'>" + response[i].SEPERATING_PROD_ID + "</td>";
+                                resultBody += "<td style='text-align:center;'>" + response[i].PROD_NAME + "</td>";
+
+
+
+                                if (response[i].NEW_SIZE == response[i].OLD_SIZE) {
+                                    resultBody += "<td style='text-align:center;'>" + response[i].NEW_SIZE + "</td>";
+                                }
+                                else {
+                                    resultBody += "<td style='text-align:center;'><s><span style='color:red;font-weight:bold'>" + response[i].OLD_SIZE + "</span></s> <span style='color:green;font-weight:bold'>" + response[i].NEW_SIZE + "</span></td>";
+
+
+                                }
+
+                                if (response[i].NEW_COLOR == response[i].OLD_COLOR) {
+                                    resultBody += "<td style='text-align:center;'>" + response[i].NEW_COLOR + "</td>";
+                                }
+                                else {
+                                    resultBody += "<td style='text-align:center;'><s><span style='color:red;font-weight:bold'>" + response[i].OLD_COLOR + "</span></s> <span style='color:green;font-weight:bold'>" + response[i].NEW_COLOR + "</span></td>";
+                                }
+                                if (response[i].OLD_PRICE == response[i].NEW_PRICE) {
+                                    resultBody += "<td style='text-align:center;'>" + response[i].NEW_PRICE + "</td>";
+                                }
+                                else {
+                                    resultBody += "<td style='text-align:center;'><s><span style='color:red;font-weight:bold'>" + response[i].OLD_PRICE + "</span></s> <span style='color:green;font-weight:bold'>" + response[i].NEW_PRICE + "</span></td>";
+                                }
+                                resultBody += "<td style='text-align:center;'><a class='btn btn-icon btn-light-danger btn-sm mr-2' onclick=DELETE_ALT_ARTICLE("+type+"," + response[i].BRANDID + ",'" + encodeURIComponent(response[i].SEPERATING_PROD_ID) + "','" + encodeURIComponent(response[i].NEW_SIZE) + "')><i class='flaticon-delete'></i></a></td>";
+                            }
+
+                            resultBody += "</tr>";
+
+                            
+
+
+                            $('#alt_tbl_bdy').append(resultBody);
+
+                            new DataTable('#alt_tbl');
+
+
+                                                        $("#ALT_MODAL").modal("show")
+                             $("#ALT_MODAL").focus();
+
+
+
+
+                        }
+
+                    }
+
+                }
+            },
+            error: function (response) {
+
+            }
+        });
+    }
+
+    function DELETE_ALT_ARTICLE(type, _BRAND, _PROD_ID, _SIZE) {
+        alert('OK');
+        $.ajax({
+            url: "/Home/DELETE_ALT_ARTICLE",
+            type: "POST",
+            dataType: "json",
+            data: {
+                _BRAND: _BRAND,
+                _PROD_ID: _PROD_ID,
+                _SIZE: _SIZE
+            },
+            success: function (response) {
+                {
+                    if (response != 0) {
+                        Swal.fire(
+                            'Successful!',
+                            'Article Has Been Deleted',
+                            'success'
+                        )
+                       Get_ALT_Data(0);
+                       Get_ALT_Data(type);
+                    }
+
+
+
+
+
+                }
+            },
+            error: function (response) {
+
+            }
+        });
+    }
+
+    function PUSH_MAINDB() {
+
+        var _brandName = $("#brandName").html();
+        Swal.fire({
+            title: "Do you want delete existing " + _brandName + " data and replace current data?",
+            icon: "question",
+            showDenyButton: true,
+            showCancelButton: true,
+            confirmButtonText: "Delete and Replace",
+            denyButtonText: `Keep All`,
+            allowEscapeKey: false,
+            allowOutsideClick: false,
+        }).then((result) => {
+
+            /* Read more about isConfirmed, isDenied below */
+            if (result.isConfirmed) {
+                PushData(_brandName, "Replace_Data");
+            }
+            else if (result.isDenied) {
+
+                PushData(_brandName, "Keep_All");
+
+            } else {
+                swal.close();
+            }
+        });
+
+
+
+
+
+    }
+
+    function PushData(_BRAND_NAME, _OP) {
+        swal.showLoading();
+        $.ajax({
+            url: "/Home/PUSH_MAINDB",
+            type: "POST",
+            dataType: "json",
+            data: {
+                _BRAND_NAME: _BRAND_NAME,
+                _OP: _OP
+            },
+            success: function (response) {
+                {
+                    Swal.fire(
+                        'Successful!',
+                        'Article Has Been Added To The Sheet & DB',
+                        'success'
+                    )
+
+                    Swal.fire({
+                        title: "Do you want to add check box in main sheet?",
+                        icon: "question",
+                        showDenyButton: true,
+                        confirmButtonText: "Yes",
+                        denyButtonText: `No`, allowOutsideClick: false,
+                    }).then((result) => {
+
+                        /* Read more about isConfirmed, isDenied below */
+                        if (result.isConfirmed) {
+                              swal.showLoading();
+                            window.location.href = "/Authorize";
+                        }
+                        else {
+                            location.reload();
+                        }
+                    });
+
+
+
+
+                }
+            },
+            error: function (response) {
+                swal.close();
+
+            }
+        });
+    }
+</script>

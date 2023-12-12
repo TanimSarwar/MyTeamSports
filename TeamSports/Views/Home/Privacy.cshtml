@@ -1,0 +1,263 @@
+@{
+    ViewData["Title"] = "Privacy Policy";
+}
+
+<link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
+<link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet" type="text/css" />
+
+
+<div class="card card-custom gutter-b example example-compact" id="form">
+    <div class="card-header">
+        <h3 class="card-title">Brand Wise File Upload</h3>
+    </div>
+
+
+    <div class="card-body">
+
+        <div class="form-group row">
+            <label class="col-form-label text-right col-lg-3 col-sm-12">Brand Name</label>
+            <div class="col-lg-4 col-md-9 col-sm-12">
+                <select class="form-control" id="brand_name" name="param">
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label class="col-form-label text-right col-lg-3 col-sm-12">File Type</label>
+            <div class="col-lg-4 col-md-9 col-sm-12">
+                <select class="form-control" id="file_type" name="param">
+                    <option value="1">Brand File</option>
+                    <option value="2">Web Scrapped</option>
+
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label class="col-form-label text-right col-lg-3 col-sm-12">Choose Files</label>
+            <div class="col-lg-4 col-md-9 col-sm-12">
+                <input type="file" class="form-control" autocomplete="off" id="mainsheet" style="text-transform:uppercase">
+            </div>
+        </div>
+
+    </div>
+    <div class="card-footer">
+        <div class="row">
+            <div class="col-lg-12 ml-lg-auto">
+                <button class="btn btn-primary mr-2" id="submitBtn">Submit</button>
+                <button type="reset" class="btn btn-secondary" onclick="cancel()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+
+
+
+</div>
+
+
+<div class="card card-custom gutter-b example example-compact" id="PUSHTODB">
+    <div class="card-header">
+        <h3 class="card-title">Upload Data</h3>
+    </div>
+    <!--begin::Form-->
+
+    <div class="card-body">
+
+        <table id="examples" class="table table-bordered table-striped dataTable" cellspacing="0">
+
+            <thead id="ART_WISE_DT_HEAD">
+            </thead>
+            <tbody id="ART_WISE_DT_BODY"></tbody>
+        </table>
+
+
+
+
+    </div>
+    <div class="card-footer">
+        <div class="row">
+            <div class="col-lg-12 ml-lg-auto">
+                <button type="reset" class="btn btn-primary mr-2" onclick="PUSH_MAINDB()">Push to Main DB/Sheet</button>
+                <button type="reset" class="btn btn-secondary" onclick="cancel()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!--end::Form-->
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+<script src="assets/plugins/global/plugins.bundle.js"></script>
+<script src="assets/plugins/custom/prismjs/prismjs.bundle.js"></script>
+<script src="assets/js/scripts.bundle.js"></script>
+<!--end::Global Theme Bundle-->
+<!--begin::Page Scripts(used by this page)-->
+<script src="assets/js/pages/crud/forms/widgets/bootstrap-datepicker.js"></script>
+<script src="assets/js/pages/crud/forms/widgets/select2.js"></script>
+
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        GetDD_Data();
+        $("#PUSHTODB").hide();
+        Get_DB_Data();
+    });
+
+
+    function GetDD_Data() {
+        var vType = 1;
+        $.ajax({
+            url: "/Home/GetDD_DATA",
+            type: "POST",
+            dataType: "json",
+            data: {
+                _type: vType
+            },
+            success: function (response) {
+                {
+                    $('select#brand_name').html('');
+                    var result = '';
+                    result += "<option value='1'>Select a Brand</option>";
+
+                    if (response.length > 0) {
+                        for (var i = 0; response.length > i; i++) {
+                            result += "<option value='" + response[i].ID + "'>" + response[i].NAME + "</option>";
+                        }
+                    }
+                    $('select#brand_name').append(result);
+                }
+            },
+            error: function (response) {
+
+            }
+        });
+    }
+
+    $("#submitBtn").click(function () {
+        var _fileType = $("#file_type :selected").text();
+        var _brandID = $("#brand_name :selected").val();
+        var _brandName = $("#brand_name :selected").text();
+        var fileInput = document.getElementById('mainsheet');
+        var _file = fileInput.files[0];
+        var formData = new FormData();
+        formData.append('excelFile', _file);
+        formData.append('vFileType', _fileType);
+        formData.append('vBrandID', _brandID);
+        formData.append('vBrandName', _brandName);
+        swal.showLoading();
+        var startdt = new Date();
+        $.ajax({
+            type: "POST",
+            url: "/Home/ImportExcelFile",
+            data: formData,
+            contentType: false,
+            processData: false,
+            async: true,
+            success: function (response) {
+                swal.close();
+                if (response) {
+
+                    Get_DB_Data();
+
+
+                }
+
+                //var startdt1 = new Date();
+                //swal.fire(response + "    :" + startdt + "    :" + startdt1);
+
+
+            },
+            error: function (response) {
+            }
+        });
+    });
+    function cancel() {
+        location.reload();
+    }
+
+    function Get_DB_Data() {
+        var vBRANDID = 4;
+        $.ajax({
+            url: "/Home/Get_DB_DATA",
+            type: "POST",
+            dataType: "json",
+            data: {
+                _BRANDID: vBRANDID
+            },
+            success: function (response) {
+                {
+                    console.log(response)
+                    if (response.status && response?.body?.length>0) {
+                        $("#PUSHTODB").show();
+                        $("#form").hide();
+                        var resultBody = "";
+                        var resultHead = "";
+                        resultHead += "<tr>";
+                        for (var i = 1; i < response.header.length; i++) {
+                            resultHead += "<td style='text-align:center;'>" + response.header[i] + "</td>";
+                        }
+                        resultHead += "</tr>";
+                        console.log("a");
+                        for (var i = 1; i < response.body.length; i++) {
+                            resultBody += "<tr>";
+                            for (var j = 1; j < response.header.length; j++) {
+                                var colName = response.header[j];
+                                resultBody += "<td style='text-align:center;'>" + response.body[i][colName] + "</td>";
+                            }
+                            resultBody += "</tr>";
+                            resultBody += "</tr>";
+                        }
+                        $("#ART_WISE_DT_HEAD").empty();
+                        $("#ART_WISE_DT_BODY").empty();
+                        $('#ART_WISE_DT_HEAD').append(resultHead);
+                        $('#ART_WISE_DT_BODY').append(resultBody);
+                        new DataTable('#examples', {
+                            scrollX: true
+                        });
+                    }
+
+                }
+            },
+            error: function (response) {
+
+            }
+        });
+
+    }
+
+    function PUSH_MAINDB() {
+        swal.showLoading();
+        var vBRANDID = 4;
+        var _brandName = "HUMMEL";
+        $.ajax({
+            url: "/Home/PUSH_MAINDB",
+            type: "POST",
+            dataType: "json",
+            data: {
+                _BRANDID: vBRANDID,
+                _BRAND_NAME: _brandName
+            },
+            success: function (response) {
+                {
+                    swal.close();
+                    Swal.fire(
+                        'Successful!',
+                        'Article Has Been Added To The Sheet & DB',
+                        'success'
+                    )
+
+
+                }
+            },
+            error: function (response) {
+
+            }
+        });
+    }
+</script>

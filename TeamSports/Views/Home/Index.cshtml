@@ -1,0 +1,345 @@
+﻿@{
+    ViewData["Title"] = "";
+
+}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css" />
+
+
+<div class="col-lg-12 col-xxl-4 order-1 order-xxl-2" style="padding-right: 0px !important; padding-left: 0px !important">
+
+    <div class="card card-custom card-stretch gutter-b">
+
+        <div class="card-header border-0">
+            <h3 class="card-title font-weight-bolder text-dark">PRODUCT SUMMARY</h3>
+
+        </div>
+        <div class="card-body pt-2">
+
+            <div class="mb-5">
+                <div class="row row-paddingless mb-10">
+                    <!--begin::Item-->
+                    <div class="col">
+                        <div class="d-flex align-items-center mr-2">
+                            <!--begin::Symbol-->
+                            <div class="symbol symbol-45 mr-4 flex-shrink-0">
+                                <div class="symbol-label">
+                                    <span class="symbol-label">
+                                    <img src="../../Adidas.png" class="h-25 align-self-middle" alt="">
+                                </span>
+                                </div>
+                            </div>
+                            <!--end::Symbol-->
+                            <!--begin::Title-->
+                            <div>
+                                <div class="font-size-h4 text-dark-75 font-weight-bolder" id="addidas">0</div>
+                                <div class="font-size-md font-weight-bold mt-1">ADIDAS</div>
+                            </div>
+                            <!--end::Title-->
+                        </div>
+                    </div>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <div class="col">
+                        <div class="d-flex align-items-center mr-2">
+                            <!--begin::Symbol-->
+                            <div class="symbol symbol-45 mr-4 flex-shrink-0">
+                                <div class="symbol-label">
+                                   <span class="symbol-label">
+                                    <img src="../../Erima.png" class="h-75 align-self-middle" alt="">
+                                </span>
+                                </div>
+                            </div>
+                            <!--end::Symbol-->
+                            <!--begin::Title-->
+                            <div>
+                                <div class="font-size-h4 text-dark-75 font-weight-bolder" id="erima">0</div>
+                                <div class="font-size-md font-weight-bold mt-1">ERIMA</div>
+                            </div>
+                            <!--end::Title-->
+                        </div>
+                    </div>
+                    <!--end::Item-->
+
+                    <div class="col">
+                        <div class="d-flex align-items-center mr-2">
+                            <!--begin::Symbol-->
+                            <div class="symbol symbol-45 mr-4 flex-shrink-0">
+                                <div class="symbol-label">
+                                   <span class="symbol-label">
+                                    <img src="../../Hummel.png" class="h-50 align-self-middle" alt="">
+                                </span>
+                                </div>
+                            </div>
+                            <!--end::Symbol-->
+                            <!--begin::Title-->
+                            <div>
+                                <div class="font-size-h4 text-dark-75 font-weight-bolder" id="hummel">0</div>
+                                <div class="font-size-md font-weight-bold mt-1">HUMMEL</div>
+                            </div>
+                            <!--end::Title-->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row row-paddingless">
+                    <!--begin::Item-->
+                    <div class="col">
+                        <div class="d-flex align-items-center mr-2">
+                            <!--begin::Symbol-->
+                            <div class="symbol symbol-45 mr-4 flex-shrink-0">
+                                <div class="symbol-label">
+                                    <span class="symbol-label">
+                                    <img src="../../Jako.png" class="h-25 align-self-middle" alt="">
+                                </span>
+                                </div>
+                            </div>
+                            <!--end::Symbol-->
+                            <!--begin::Title-->
+                            <div>
+                                <div class="font-size-h4 text-dark-75 font-weight-bolder" id="jako">0</div>
+                                <div class="font-size-md font-weight-bold mt-1">JAKO</div>
+                            </div>
+                            <!--end::Title-->
+                        </div>
+                    </div>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <div class="col">
+                        <div class="d-flex align-items-center mr-2">
+                            <!--begin::Symbol-->
+                            <div class="symbol symbol-45 mr-4 flex-shrink-0">
+                                <div class="symbol-label">
+                                    <span class="symbol-label">
+                                    <img src="../../Nike.png" class="h-50 align-self-middle" alt="">
+                                </span>
+                                </div>
+                            </div>
+                            <!--end::Symbol-->
+                            <!--begin::Title-->
+                            <div>
+                                <div class="font-size-h4 text-dark-75 font-weight-bolder" id="nike">0</div>
+                                <div class="font-size-md font-weight-bold mt-1">NIKE</div>
+                            </div>
+                            <!--end::Title-->
+                        </div>
+                    </div>
+                    <!--end::Item-->
+
+                    <div class="col">
+                        <div class="d-flex align-items-center mr-2">
+                            <!--begin::Symbol-->
+                            <div class="symbol symbol-45 mr-4 flex-shrink-0">
+                                <div class="symbol-label">
+                                    <span class="symbol-label">
+                                    <img src="../../Puma.png" class="h-50 align-self-middle" alt="">
+                                </span>
+                                </div>
+                            </div>
+                            <!--end::Symbol-->
+                            <!--begin::Title-->
+                            <div>
+                                <div class="font-size-h4 text-dark-75 font-weight-bolder" id="puma">0</div>
+                                <div class="font-size-md font-weight-bold mt-1">PUMA</div>
+                            </div>
+                            <!--end::Title-->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+<div class="card card-custom gutter-b example example-compact" id="ALL_DATA">
+    <div class="card-header">
+
+        <div class="form-group row">
+            <div class="col-lg-12 col-md-9 col-sm-12" style="padding-top: 15px !important">
+                <select class="form-control" id="brand_name" name="param">
+                </select>
+            </div>
+        </div>
+
+    </div>
+    <!--begin::Form-->
+    <div class="card-body">
+        <table id="examples" class="table table-bordered dataTable" cellspacing="0">
+            <thead id="ART_WISE_DT_HEAD">
+                <tr>
+                    <td style="text-align:center;">Brand</td>
+                     <td style="text-align:center;">Unique Prod ID</td>
+                    <td style="text-align:center;">Separate Unique ID</td>
+                     <td style="text-align:center;">Size</td>
+                     <td style="text-align:center;">Color</td>
+                    <td style="text-align:center;">Price</td>
+</tr>
+            </thead>
+            <tbody id="ART_WISE_DT_BODY"></tbody>
+        </table>
+    </div>
+
+
+</div>
+
+
+
+
+
+    <script src="assets/plugins/global/plugins.bundle.js"></script>
+   <script src="assets/js/scripts.bundle.js"></script>
+   <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+   <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+
+
+
+
+<script>
+    $(document).ready(function() {
+        $("#ALL_DATA").hide();
+        GetDD_Data();
+        Get_DB_Data(0);
+        Get_Summary_Data();
+    });
+
+    function Get_Summary_Data() {
+        $.ajax({
+            url: "/Home/MAIN_SHEET_DATA_SUMMARY",
+            type: "POST",
+            dataType: "json",
+            success: function(response) {
+                {
+                    for (var i = 0; i < response.length; i++) {
+
+                        console.log(response[i].BRANDID);
+                        console.log(response[i].PROD_NO);
+
+
+                        if (response[i].BRANDID == 1) {
+
+                            $("#puma").html(response[i].PROD_NO);
+                        }
+                         if (response[i].BRANDID == 3) {
+
+                            $("#jako").html(response[i].PROD_NO);
+                        }
+                        if (response[i].BRANDID == 4) {
+
+                            $("#hummel").html(response[i].PROD_NO);
+                        }
+                        if (response[i].BRANDID == 5) {
+
+                            $("#nike").html(response[i].PROD_NO);
+                        }
+                        if (response[i].BRANDID == 6) {
+
+                            $("#erima").html(response[i].PROD_NO);
+                        }
+                        if (response[i].BRANDID == 2) {
+
+                            $("#adidas").html(response[i].PROD_NO);
+                        }
+                    }
+                }
+            },
+            error: function(response) {
+
+            }
+        });
+    }
+
+
+
+    function GetDD_Data() {
+        var vType = 0;
+        $.ajax({
+            url: "/Home/GetDD_DATA",
+            type: "POST",
+            dataType: "json",
+            data: {
+                _type: vType
+            },
+            success: function(response) {
+                {
+                    $('select#brand_name').html('');
+                    var result = '';
+                    result += "<option value='1'>All Brand</option>";
+
+                    if (response?.length > 0) {
+                        for (var i = 0; response?.length > i; i++) {
+                            result += "<option value='" + response[i].ID + "'>" + response[i].NAME + "</option>";
+                        }
+                    }
+                    $('select#brand_name').append(result);
+                }
+            },
+            error: function(response) {
+
+            }
+        });
+    }
+
+    $("select#brand_name").change(function() {
+        var brand = "0";
+        brand = $('#brand_name option:selected').val();
+        Get_DB_Data(brand);
+    });
+
+    
+
+        function Get_DB_Data(brand) {
+        swal.showLoading();
+        $.ajax({
+            url: "/Home/MAIN_SHEET_DATA",
+            type: "POST",
+            dataType: "json",
+            data: {
+                _BRANDID: brand
+            },
+            success: function(response) {
+                {
+
+                    swal.close();
+
+                    if(response.length)
+                    {
+                         $("#ALL_DATA").show();
+                  }
+                    $("#ART_WISE_DT_BODY").empty();
+                     new DataTable('#examples').clear();
+                     new DataTable('#examples').destroy();
+
+
+                    var resultBody = "";
+                        for (var i = 0; i < response.length; i++) {
+                        resultBody += "<tr>"
+                        resultBody += "<td style='text-align:center;'>" + response[i].BRAND + "</td>";
+                        resultBody += "<td style='text-align:center;'>" + response[i].UNIFYING_PROD_ID + "</td>";
+                        resultBody += "<td style='text-align:center;'>" + response[i].SEPERATING_PROD_ID + "</td>";
+                        resultBody += "<td style='text-align:center;'>" + response[i].MANUFACTURER_SIZE_SPECTRUM + "</td>";
+                        resultBody += "<td style='text-align:center;'>" + response[i].MANUFAC_COLOR_SPECTRUM_NAMES + "</td>";
+                        resultBody += "<td style='text-align:center;'>" + response[i].BASE_PRICE + "</td>";
+
+                        resultBody += "</tr>"
+                    }
+
+                    $('#ART_WISE_DT_BODY').append(resultBody);
+                    new DataTable('#examples');
+  
+                }
+            },
+            error: function(response) {
+                swal.close();
+            }
+        });
+    }
+</script>

@@ -1,0 +1,397 @@
+﻿@{
+    ViewData["Title"] = "Single Article Entry";
+}
+
+<link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
+<link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet" type="text/css" />
+
+
+<div class="card card-custom gutter-b example example-compact" id="form">
+    <div class="card-header">
+        <h3 class="card-title">Single Article Entry</h3>
+
+
+
+    </div>
+
+
+    <div class="card-body">
+
+        <div class="form-group row">
+            <label class="col-form-label text-right col-lg-3 col-sm-12">Brand Name</label>
+            <div class="col-lg-4 col-md-9 col-sm-12">
+                <select class="form-control" id="brand_name" name="param">
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label class="col-form-label text-right col-lg-3 col-sm-12">Article</label>
+            <div class="col-lg-4 col-md-9 col-sm-12">
+                <input class="form-control" type="text" Placeholder="DY1990" autocomplete="off" id="article" />
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label class="col-form-label text-right col-lg-3 col-sm-12">EAN Number</label>
+            <div class="col-lg-4 col-md-9 col-sm-12">
+                <input class="form-control" type="text" Placeholder="4061624849891" autocomplete="off" id="ean" />
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-form-label text-right col-lg-3 col-sm-12">Product Name</label>
+            <div class="col-lg-4 col-md-9 col-sm-12">
+                <input class="form-control" type="text" Placeholder="Adidas Tiro 19 Neckwarmer" autocomplete="off" id="art_name" />
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label class="col-form-label text-right col-lg-3 col-sm-12">Gender</label>
+            <div class="col-lg-4 col-md-9 col-sm-12">
+                <input class="form-control" type="text" Placeholder="Kinder" autocomplete="off" id="gender" />
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label class="col-form-label text-right col-lg-3 col-sm-12">Colors</label>
+            <div class="col-lg-4 col-md-9 col-sm-12">
+                <input class="form-control" type="text" Placeholder="White/Black/Silver Met./Team Solar Green" autocomplete="off" id="colors" />
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label class="col-form-label text-right col-lg-3 col-sm-12">Sizes</label>
+            <div class="col-lg-4 col-md-9 col-sm-12">
+                <input class="form-control" type="text" Placeholder="XS;S;M;L;XL;XXL;XXS" autocomplete="off" id="size" />
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label class="col-form-label text-right col-lg-3 col-sm-12">Price</label>
+            <div class="col-lg-4 col-md-9 col-sm-12">
+                <input class="form-control" type="text" Placeholder="13.96" autocomplete="off" id="price" />
+            </div>
+        </div>
+        @*   <div class="form-group row">
+        <label class="col-form-label text-right col-lg-3 col-sm-12">File Type</label>
+        <div class="col-lg-4 col-md-9 col-sm-12">
+        <select class="form-control" id="file_type" name="param">
+        <option value="1">Brand File</option>
+        <option value="2">Web Scrapped</option>
+
+        </select>
+        </div>
+        </div>*@
+    </div>
+    <div class="card-footer">
+        <div class="row">
+            <div class="col-lg-12 ml-lg-auto">
+                <button class="btn btn-primary mr-2" id="submitBtn">Submit</button>
+                @* <button type="reset" class="btn btn-secondary" onclick="cancel()">Cancel</button> *@
+            </div>
+        </div>
+    </div>
+
+
+
+
+</div>
+
+
+<div class="card card-custom gutter-b example example-compact" id="PUSHTODB">
+    <div class="card-header">
+        <h3 class="card-title" id="brandName">Upload Data</h3>
+        <div class="d-flex align-items-center">
+            <label class="checkbox checkbox-lg checkbox-light-success checkbox-inline flex-shrink-0 m-0 mx-4">
+                <input type="checkbox" name="select" value="1">
+                <span></span>
+            </label>
+            <div class="d-flex flex-column flex-grow-1">
+                <a href="#" class="text-dark-75 text-hover-primary font-weight-bold font-size-lg mb-1">
+                    New Article
+                </a>
+            </div>
+        </div>
+        <div class="d-flex align-items-center">
+            <label class="checkbox checkbox-lg checkbox-light-danger checkbox-inline flex-shrink-0 m-0 mx-4">
+                <input type="checkbox" name="select" value="1">
+                <span></span>
+            </label>
+            <div class="d-flex flex-column flex-grow-1">
+                <a href="#" class="text-dark-75 text-hover-primary font-weight-bold font-size-lg mb-1">
+                    Existing Article & Will Be Updated
+                </a>
+            </div>
+        </div>
+    </div>
+    <!--begin::Form-->
+
+    <div class="card-body">
+
+        <table id="examples" class="table table-bordered dataTable" cellspacing="0">
+
+            <thead id="ART_WISE_DT_HEAD">
+            </thead>
+            <tbody id="ART_WISE_DT_BODY"></tbody>
+        </table>
+
+
+
+
+    </div>
+    <div class="card-footer">
+        <div class="row">
+            <div class="col-lg-12 ml-lg-auto">
+                <button type="reset" class="btn btn-primary mr-2" onclick="PUSH_MAINDB()">Push to Main DB/Sheet</button>
+                <button type="reset" class="btn btn-danger" onclick="DISCARD()">Discard</button>
+            </div>
+        </div>
+    </div>
+
+    <!--end::Form-->
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="assets/plugins/global/plugins.bundle.js"></script>
+<script src="assets/plugins/custom/prismjs/prismjs.bundle.js"></script>
+<script src="assets/js/scripts.bundle.js"></script>
+<!--end::Global Theme Bundle-->
+<!--begin::Page Scripts(used by this page)-->
+<script src="assets/js/pages/crud/forms/widgets/bootstrap-datepicker.js"></script>
+<script src="assets/js/pages/crud/forms/widgets/select2.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        GetDD_Data();
+        $("#PUSHTODB").hide();
+        Get_DB_Data();
+    });
+
+
+    function GetDD_Data() {
+        var vType = 0;
+        $.ajax({
+            url: "/Home/GetDD_DATA",
+            type: "POST",
+            dataType: "json",
+            data: {
+                _type: vType
+            },
+            success: function (response) {
+                {
+                    $('select#brand_name').html('');
+                    var result = '';
+                    result += "<option value='1'>Select a Brand</option>";
+
+                    if (response?.length > 0) {
+                        for (var i = 0; response?.length > i; i++) {
+                            result += "<option value='" + response[i].ID + "'>" + response[i].NAME + "</option>";
+                        }
+                    }
+                    $('select#brand_name').append(result);
+                }
+            },
+            error: function (response) {
+                swal.close();
+
+            }
+        });
+    }
+
+    $("#submitBtn").click(function () {
+        var vBrandID = $("#brand_name :selected").val();
+        var vBrandName = $("#brand_name :selected").text();
+        var vArticle = $("#article").val();
+        var vEan = $("#ean").val();
+        var vArticleName = $("#art_name").val();
+        var vGender = $("#gender").val();
+        var vColors = $("#colors").val();
+        var vSize = $("#size").val();
+        var vPrice = $("#price").val();
+        if (vBrandID == "" && vBrandName == "" && vPrice == "" && vSixe == "" && vColors == "" && vGender == "" && vEan == "" && vArticle == "") {
+            Swal.fire(
+                'Successful!',
+                'Give all the informations correctly!!',
+                'error'
+            )
+        }
+        else {
+            var formData = new FormData();
+            formData.append('_BrandID', vBrandID);
+            formData.append('_BrandName', vBrandName);
+            formData.append('_Price', vPrice);
+            formData.append('_Size', vSize);
+            formData.append('_Colors', vColors);
+            formData.append('_Gender', vGender);
+            formData.append('_Ean', vEan);
+            formData.append('_Article', vArticle);
+            formData.append('_ArticleName', vArticleName);
+            swal.showLoading();
+            $.ajax({
+                type: "POST",
+                url: "/Home/ADD_SINGLE_ARTICLE",
+                data: formData,
+                contentType: false,
+                processData: false,
+                async: true,
+                success: function (response) {
+                    swal.close();
+                    if (response != 0) {
+                        Get_DB_Data();
+                    }
+                },
+                error: function (response) {
+                    swal.close();
+                }
+            });
+        }
+
+
+
+
+
+
+    });
+
+    function DISCARD() {
+
+
+        Swal.fire({
+            title: "Do you want to discard the articles?",
+            icon: "question",
+            showDenyButton: true,
+            showCancelButton: true,
+            confirmButtonText: "Yes",
+            denyButtonText: `No`
+        }).then((result) => {
+            /* Read more about isConfirmed, isDenied below */
+            if (result.isConfirmed) {
+
+                $.ajax({
+                    url: "/Home/DISCARD_TEMP_DB",
+                    type: "POST",
+                    dataType: "json",
+                    data: {
+                    },
+                    success: function (response) {
+                        {
+                            swal.close();
+                            Swal.fire(
+                                'Successful!',
+                                'File Upload Discarded!!',
+                                'success'
+                            )
+
+                            setTimeout(function () {
+                                window.location.reload();
+                            }, 1500);
+                        }
+                    },
+                    error: function (response) {
+                    }
+                });
+
+            } else if (result.isDenied) {
+                Swal.fire("Changes are not saved", "", "info");
+            }
+        });
+
+
+
+
+
+    }
+
+    function Get_DB_Data() {
+        swal.showLoading();
+        $.ajax({
+            url: "/Home/Get_DB_DATA",
+            type: "POST",
+            dataType: "json",
+            data: {
+            },
+            success: function (response) {
+                {
+                    swal.close();
+                    console.log("Generating Data: ", response);
+                    if (response?.status && response?.body?.length > 0) {
+                        $("#PUSHTODB").show();
+                        $("#brandName").html(response?.body[0]["BRAND"]);
+                        $("#form").hide();
+                        var resultBody = "";
+                        var resultHead = "";
+                        resultHead += "<tr>";
+                        for (var i = 0; i < response?.header.length; i++) {
+                            resultHead += "<td style='text-align:center;'>" + response?.header[i] + "</td>";
+                        }
+                        resultHead += "</tr>";
+
+                        for (var i = 0; i < response?.body.length; i++) {
+                            if (response?.body[i].ISEXIST == 1) {
+                                resultBody += "<tr style='background-color:#FFE2E5 !important'>";
+                            }
+                            else {
+                                resultBody += "<tr style='background-color:#c9f7f5 !important'>";
+                            }
+
+                            for (var j = 0; j < response?.header.length; j++) {
+                                var colName = response?.header[j];
+                                resultBody += "<td style='text-align:center;'>" + response?.body[i][colName] + "</td>";
+                            }
+                            resultBody += "</tr>";
+                            resultBody += "</tr>";
+                        }
+                        $("#ART_WISE_DT_HEAD").empty();
+                        $("#ART_WISE_DT_BODY").empty();
+                        $('#ART_WISE_DT_HEAD').append(resultHead);
+                        $('#ART_WISE_DT_BODY').append(resultBody);
+                        swal.close();
+                        new DataTable('#examples', {
+                            scrollX: true
+                        });
+
+                    }
+                }
+            },
+            error: function (response) {
+                swal.close();
+            }
+        });
+    }
+
+    function PUSH_MAINDB() {
+        swal.showLoading();
+        var _brandName = $("#brandName").html();
+        $.ajax({
+            url: "/Home/PUSH_MAINDB",
+            type: "POST",
+            dataType: "json",
+            data: {
+                _BRAND_NAME: _brandName,
+                _OP: "Keep_All"
+            },
+            success: function (response) {
+                {
+                    swal.close();
+                    Swal.fire(
+                        'Successful!',
+                        'Article Has Been Added To The Sheet & DB',
+                        'success'
+                    )
+
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 1500);
+
+
+                }
+            },
+            error: function (response) {
+                swal.close();
+            }
+        });
+    }
+</script>
