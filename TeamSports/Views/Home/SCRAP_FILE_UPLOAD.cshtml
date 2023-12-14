@@ -407,14 +407,14 @@
                     console.log("GET_ALT_DATA", response);
                     {
                         if (type == 0) {
-                             if (response[0].QTY > 0 || response[1].QTY > 0 || response[2].QTY > 0) {
+                             if (response[0].QTY > 0 || response[1].QTY > 0 || response[2].QTY > 0 || response[3].QTY > 0 || response[4].QTY > 0) {
                                 $("#summary").show();
                                 $("#color_ALT").html("");
                                 $("#size_ALT").html("");
                                 $("#price_ALT").html("");
                                 $("#New_ART_ALT").html("");
                                 $("#New_ART_ALT").html("<a class='btn btn-xs btn-icon btn-light-danger mr-2'><i class='far fa-plus-square'></i></a>New: " +response[3].QTY);
-                                $("#Old_ART_ALT").html("<a class='btn btn-xs btn-icon btn-light-info mr-2'><i class='fas fa-trash-alt'></i></a>Removed: " +response[3].QTY);//response 4 hbe 
+                                $("#Old_ART_ALT").html("<a class='btn btn-xs btn-icon btn-light-info mr-2'><i class='fas fa-trash-alt'></i></a>Removed: " +response[4].QTY);//response 4 hbe 
                                 $("#color_ALT").html("<a class='btn btn-xs btn-icon btn-light-success mr-2'><i class='fas fa-highlighter'></i></a>Color Alter: "+response[2].QTY);
                                 $("#size_ALT").html("<a class='btn btn-xs btn-icon btn-light-primary mr-2'><i class='fas fa-tape'></i></a>Size Alter: "+response[1].QTY);
                                 $("#price_ALT").html("<a class='btn btn-xs btn-icon btn-light-warning mr-2'><i class='far fa-money-bill-alt'></i></a>Price Alter: "+response[0].QTY);
