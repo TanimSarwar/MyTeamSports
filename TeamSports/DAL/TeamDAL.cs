@@ -103,7 +103,7 @@ namespace TeamSports.DAL
                     con.Open();
                     SqlCommand cmd = new SqlCommand("GET_ALT_DATA", con);
                     cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.CommandTimeout = 90;
+                    cmd.CommandTimeout = 500;
                     cmd.Parameters.AddWithValue("@TYPE", _TYPE);
                     SqlDataAdapter adpt = new SqlDataAdapter(cmd);
                     adpt.Fill(dt);

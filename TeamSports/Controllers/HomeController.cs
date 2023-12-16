@@ -95,32 +95,110 @@ namespace TeamSports.Controllers
                     case ".xlsx": //Excel 07 and above.
                         conString = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" + filePath + ";Extended Properties='Excel 8.0;HDR=YES'";
                         break;
+                    case ".csv": //csv.
+                        conString = $"Provider=Microsoft.ACE.OLEDB.12.0;Data Source={System.IO.Path.GetDirectoryName(filePath)};Extended Properties='text;HDR=Yes;'";
+                        break;
                 }
 
-                DataTable dt = new DataTable();
-                conString = string.Format(conString, filePath);
 
-                using (OleDbConnection connExcel = new OleDbConnection(conString))
+
+                DataTable dt = new DataTable();
+
+
+                if (extension.ToLower() == ".csv")
                 {
-                    using (OleDbCommand cmdExcel = new OleDbCommand())
+
+                    using (OleDbConnection connection = new OleDbConnection(conString))
                     {
-                        using (OleDbDataAdapter odaExcel = new OleDbDataAdapter())
+                        // Open the connection
+                        connection.Open();
+
+                        // Select all data from the CSV file
+                        string query = $"SELECT * FROM [{System.IO.Path.GetFileName(filePath)}]";
+
+                        using (OleDbCommand command = new OleDbCommand(query, connection))
                         {
-                            cmdExcel.Connection = connExcel;
-                            connExcel.Open();
-                            DataTable dtExcelSchema;
-                            dtExcelSchema = connExcel.GetOleDbSchemaTable(OleDbSchemaGuid.Tables, null);
-                            string sheetName = dtExcelSchema.Rows[0]["TABLE_NAME"].ToString();
-                            cmdExcel.CommandText = "SELECT * From [" + sheetName + "]";
-                            odaExcel.SelectCommand = cmdExcel;
-                            odaExcel.Fill(dt);
-                            connExcel.Close();
+                            using (OleDbDataAdapter adapter = new OleDbDataAdapter(command))
+                            {
+                                adapter.Fill(dt);
+
+                            }
                         }
                     }
                 }
+                else
+                {
+
+                    conString = string.Format(conString, filePath);
+                    using (OleDbConnection connExcel = new OleDbConnection(conString))
+                    {
+                        using (OleDbCommand cmdExcel = new OleDbCommand())
+                        {
+                            using (OleDbDataAdapter odaExcel = new OleDbDataAdapter())
+                            {
+                                cmdExcel.Connection = connExcel;
+                                connExcel.Open();
+                                DataTable dtExcelSchema;
+                                dtExcelSchema = connExcel.GetOleDbSchemaTable(OleDbSchemaGuid.Tables, null);
+                                string sheetName = dtExcelSchema.Rows[0]["TABLE_NAME"].ToString();
+                                cmdExcel.CommandText = "SELECT * From [" + sheetName + "]";
+                                odaExcel.SelectCommand = cmdExcel;
+                                odaExcel.Fill(dt);
+                                connExcel.Close();
+                            }
+                        }
+                    }
+                }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                 if (dt.Rows.Count > 0)
                 {
-                    bool result = await ExcelDataProcess(vBrandID, vBrandName, vFileType, dt);
+
+
+                    var cleanedDataTable = new DataTable();
+                    var FinalcleanedDataTable = new DataTable();
+
+                    foreach (DataColumn column in dt.Columns)
+                    {
+                        cleanedDataTable.Columns.Add(column.ColumnName, column.DataType);
+                        FinalcleanedDataTable.Columns.Add(column.ColumnName?.Replace(" ", ""), column.DataType);
+                    }
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        var newRow = FinalcleanedDataTable.NewRow();
+                        foreach (DataColumn column in cleanedDataTable.Columns)
+                        {
+                            var value = row[column.ColumnName];
+                            if (value != null && value != DBNull.Value && value is string)
+                            {
+                                newRow[column.ColumnName?.Replace(" ", "")] = ((string)value).Trim();
+                            }
+                            else
+                            {
+                                newRow[column.ColumnName?.Replace(" ", "")] = value;
+                            }
+                        }
+                        FinalcleanedDataTable.Rows.Add(newRow);
+                    }
+
+
+
+
+                    bool result = await ExcelDataProcess(vBrandID, vBrandName, vFileType, FinalcleanedDataTable);
                     if (result)
                     {
                         return Json(result);
@@ -168,7 +246,7 @@ namespace TeamSports.Controllers
                         DataColumnCollection dataColumnCollection = dt.Columns;
                         for (int j = 0; j < dataColumnCollection.Count; j++)
                         {
-                            string columnName = dataColumnCollection[j].ToString();
+                            string columnName = dataColumnCollection[j].ToString()?.Replace(" ","");
                             sqlBulkCopy.ColumnMappings.Add(columnName, columnName);
                         }
                         con.Open();
@@ -251,6 +329,20 @@ namespace TeamSports.Controllers
         {
             DataTable resultTable = new DataTable();
             DataTable dataTable = new DataTable();
+
+
+
+            DataColumnCollection columns = dt.Columns;
+            if (!columns.Contains("Price"))
+            {
+                dt.Columns.Add("Price");
+            }
+
+
+
+
+
+
             try
             {
                 resultTable.Columns.Add("BRANDID");
@@ -465,10 +557,10 @@ namespace TeamSports.Controllers
                 //   .CopyToDataTable();
 
 
-                dataTable = SortDataTable(dt, "StyleNo", "Größe ", "lookupColorName");
+                dataTable = SortDataTable(dt, "StyleNo", "Größe", "lookupColorName");
 
                 var groupedData = from row in dataTable.AsEnumerable()
-                                  group row by new { PROD_NAME = row["StyleName"], PROD_NUMBER = row["StyleNo"], BASE_PRICE = row["LISTPRICEDEEUR"], GENDER = row["Geschlecht (DE)"], DESCRIPTION = row["ProductText (DE)"] } into grp
+                                  group row by new { PROD_NAME = row["StyleName"], PROD_NUMBER = row["StyleNo"], BASE_PRICE = row["LISTPRICEDEEUR"], GENDER = row["Geschlecht(DE)"], DESCRIPTION = row["ProductText(DE)"] } into grp
                                   select new
                                   {
                                       PROD_NAME = grp.Key.PROD_NAME,
@@ -484,7 +576,7 @@ namespace TeamSports.Controllers
                                       DigizuitePackshot5 = string.Join(";", grp.Select(r => r["DigizuitePackshot5"]).Distinct()),
                                       DigizuitePackshot6 = string.Join(";", grp.Select(r => r["DigizuitePackshot6"]).Distinct()),
                                       EAN = string.Join(";", grp.Select(r => r["EAN"]).Distinct()),
-                                      SIZE = string.Join(";", grp.Select(r => r["Größe "]).Distinct()),
+                                      SIZE = string.Join(";", grp.Select(r => r["Größe"]).Distinct()),
                                       COLORCODE = string.Join(";", grp.Select(r => r["ColorCode"]).Distinct()),
                                       COLORNAME = string.Join(";", grp.Select(r => r["lookupColorName"]).Distinct())
                                   };
@@ -640,10 +732,10 @@ namespace TeamSports.Controllers
                 //  .CopyToDataTable();
 
 
-                dataTable = SortDataTable(dt, "Artikelnummer", "Groesse", "Farbe DE");
+                dataTable = SortDataTable(dt, "Artikelnummer", "Groesse", "FarbeDE");
 
                 var groupedData = from row in dataTable.AsEnumerable()
-                                  group row by new { PROD_NAME = row["Artikelname DE"], PROD_NUMBER = row["Artikelnummer"], LINE = row["Linie"], TYPE = row["Produktart DE"], BASE_PRICE = row["DE Empf VK EUR"], GENDER = row["Zielgruppe DE"], DESCRIPTION = row["Sonstiges DE"] } into grp
+                                  group row by new { PROD_NAME = row["ArtikelnameDE"], PROD_NUMBER = row["Artikelnummer"], LINE = row["Linie"], TYPE = row["ProduktartDE"], BASE_PRICE = row["DEEmpfVKEUR"], GENDER = row["ZielgruppeDE"], DESCRIPTION = row["SonstigesDE"] } into grp
                                   select new
                                   {
                                       PROD_NAME = grp.Key.PROD_NAME,
@@ -653,10 +745,10 @@ namespace TeamSports.Controllers
                                       GENDER = grp.Key.GENDER,
                                       DESCRIPTION = grp.Key.DESCRIPTION,
                                       BASE_PRICE = grp.Key.BASE_PRICE,
-                                      EAN = string.Join(";", grp.Select(r => r["EAN Code"]).Distinct()),
+                                      EAN = string.Join(";", grp.Select(r => r["EANCode"]).Distinct()),
                                       SIZE = string.Join(";", grp.Select(r => r["Groesse"]).Distinct()),
-                                      COLORCODE = string.Join(";", grp.Select(r => r["Farbe DE"]).Distinct()),
-                                      COLORNAME = string.Join(";", grp.Select(r => r["Farbe DE"]).Distinct())
+                                      COLORCODE = string.Join(";", grp.Select(r => r["FarbeDE"]).Distinct()),
+                                      COLORNAME = string.Join(";", grp.Select(r => r["FarbeDE"]).Distinct())
                                   };
 
 
@@ -894,7 +986,7 @@ namespace TeamSports.Controllers
 
                 dataTable = SortDataTable(dt, "ItemNo", "SIZE", "ColorDescription");
                 var groupedData = from row in dataTable.AsEnumerable()
-                                  group row by new { PROD_NAME = row["Description"], PROD_NUMBER = row["ItemNo"], TITLE = row["Description"], BASE_PRICE = row["UVP"], GENDER = row["GENDER"], N = row["recommended UVP"], M = row["Price Individual"], O = row["Text1"], P = row["Text2"], Q = row["Text3"], R = row["Text4"], S = row["Text5"] } into grp
+                                  group row by new { PROD_NAME = row["Description"], PROD_NUMBER = row["ItemNo"], TITLE = row["Description"], BASE_PRICE = row["UVP"], GENDER = row["GENDER"], N = row["recommendedUVP"], M = row["PriceIndividual"], O = row["Text1"], P = row["Text2"], Q = row["Text3"], R = row["Text4"], S = row["Text5"] } into grp
                                   select new
                                   {
                                       PROD_NAME = grp.Key.PROD_NAME,

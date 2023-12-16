@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "";
+    ViewData["Title"] = "Dashboard";
 
 }
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css" />
@@ -7,7 +7,7 @@
 
 <div class="col-lg-12 col-xxl-4 order-1 order-xxl-2" style="padding-right: 0px !important; padding-left: 0px !important">
 
-<div class="card card-custom gutter-b example example-compact" id="ALL_DATA">
+<div class="card card-custom gutter-b example example-compact" id="SUMMERY_DATA">
     <div class="card card-custom card-stretch gutter-b"> 
 
         <div class="card-header border-0">
@@ -154,14 +154,7 @@
 
 </div>
 
-
-
-
-
-
-
-
-<div class="card card-custom gutter-b example example-compact" id="ALL_DATA">
+    <div class="card card-custom gutter-b example example-compact" style="display:none;" id="ALL_DATA">
     <div class="card-header">
 
         <div class="form-group row">
@@ -191,7 +184,7 @@
 
 
 </div>
-
+</div>
 
 
 
@@ -205,7 +198,8 @@
 
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
+
         $("#ALL_DATA").hide();
         GetDD_Data();
         Get_DB_Data(0);
@@ -313,7 +307,7 @@
 
                     if(response.length)
                     {
-                         $("#ALL_DATA").show();
+                        $("#ALL_DATA").show();
                   }
                     $("#ART_WISE_DT_BODY").empty();
                      new DataTable('#examples').clear();
