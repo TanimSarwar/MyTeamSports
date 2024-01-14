@@ -57,6 +57,7 @@ namespace TeamSports.Controllers
         }
 
         [HttpPost]
+        [DisableRequestSizeLimit]
         public async Task<JsonResult> ImportExcelFile(IFormFile excelFile, string vBrandID, string vBrandName, string vFileType)
         {
             /*
@@ -413,7 +414,6 @@ namespace TeamSports.Controllers
                                       BASE_PRICE = grp.Key.BASE_PRICE,
                                       EAN = string.Join(";", grp.Select(r => r["EAN"]).Distinct()),
                                       SIZE = string.Join(";", grp.Select(r => r["Size"]).Distinct()),
-                                      COLORCODE = string.Join(";", grp.Select(r => r["Color"]).Distinct()),
                                       COLORNAME = string.Join(";", grp.Select(r => r["Color"]).Distinct())
                                   };
 
@@ -431,12 +431,15 @@ namespace TeamSports.Controllers
                     newRow["BRAND"] = vBrandName;
                     newRow["LINE"] = "".ToString().Trim();
                     newRow["PROD_NAME"] = item.PROD_NAME.ToString().Trim().ToString().Trim();
-                    newRow["PROD_NUMBER"] = item.PROD_NUMBER.ToString().Trim();
-                    newRow["UNIFYING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim();
-                    newRow["SEPERATING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim() + " - " + item.GENDER.ToString().Trim();
+
+                    string PROD_NUMBER = vBrandName.ToLower() == "nike" && item.PROD_NUMBER.ToString().Trim().Contains('-') ? item.PROD_NUMBER.ToString().Trim().Split('-')[0] : item.PROD_NUMBER.ToString().Trim();
+
+                    newRow["PROD_NUMBER"] = PROD_NUMBER;
+                    newRow["UNIFYING_PROD_ID"] = PROD_NUMBER;
+                    newRow["SEPERATING_PROD_ID"] =  item.GENDER.ToString().Trim().ToLower() == "erwachsene" || item.GENDER.ToString().Trim().ToLower() == "herren" ? PROD_NUMBER + " - " + "Unisex" : item.GENDER.ToString().Trim().Length>0? PROD_NUMBER + " - " + item.GENDER.ToString().Trim(): PROD_NUMBER;
                     newRow["TITLE"] = item.PROD_NAME.ToString().Trim();
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
-                    newRow["PROD_GENDER"] = item.GENDER.ToString().Trim();
+                    newRow["PROD_GENDER"] = item.GENDER.ToString().Trim().ToLower()== "erwachsene"|| item.GENDER.ToString().Trim().ToLower() == "herren"? "Unisex": item.GENDER.ToString().Trim();
                     newRow["PROD_DESCRIPTION"] = Regex.Replace(item.DESCRIPTION.ToString().Trim(), expression, " ").Trim();
                     newRow["HTML_BODY"] = "".ToString().Trim();
                     newRow["VENDOR"] = "".ToString().Trim();
@@ -445,13 +448,13 @@ namespace TeamSports.Controllers
                     newRow["MANUFACTURER_SIZE_SPECTRUM"] = item.SIZE.ToString().Trim();
                     newRow["STORE_SIZE_SPECTRUM"] = item.SIZE.ToString().Trim();
                     newRow["MANUFAC_COLOR_SPECTRUM_NAMES"] = item.COLORNAME.ToString().Trim();
-                    newRow["MANUFAC_COLOR_SPECTRUM_CODES"] = "".ToString().Trim();
+                    newRow["MANUFAC_COLOR_SPECTRUM_CODES"] = vBrandName.ToLower() == "nike" && item.PROD_NUMBER.ToString().Trim().Contains('-') ? item.PROD_NUMBER.ToString().Trim().Split('-')[1] : 0.ToString().Trim();
                     newRow["STORE_COLOR_SPECTRUM"] = item.COLORNAME.ToString().Trim();
                     newRow["COLOR_SELECTION"] = "".ToString().Trim();
                     newRow["EXTRA_OPT_NAME"] = "".ToString().Trim();
                     newRow["EXTRA_OPT_VAL"] = "".ToString().Trim();
                     newRow["VERSION_NAME"] = "".ToString().Trim();
-                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim();
+                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim()?.Replace('.',',');
                     newRow["VARIANT_GRAMS"] = "".ToString().Trim();
                     newRow["VARIANT_INV_TRACKER"] = "".ToString().Trim();
                     newRow["VARIANT_INV_QTY"] = "".ToString().Trim();
@@ -560,7 +563,7 @@ namespace TeamSports.Controllers
                 dataTable = SortDataTable(dt, "StyleNo", "Größe", "lookupColorName");
 
                 var groupedData = from row in dataTable.AsEnumerable()
-                                  group row by new { PROD_NAME = row["StyleName"], PROD_NUMBER = row["StyleNo"], BASE_PRICE = row["LISTPRICEDEEUR"], GENDER = row["Geschlecht(DE)"], DESCRIPTION = row["ProductText(DE)"] } into grp
+                                  group row by new { PROD_NAME = row["StyleName"], PROD_NUMBER = row["StyleNo"], BASE_PRICE = row["LISTPRICEDEEUR"], GENDER = row["Geschlecht(DE)"], DESCRIPTION = row["SalesDescription(DE)"] } into grp
                                   select new
                                   {
                                       PROD_NAME = grp.Key.PROD_NAME,
@@ -596,10 +599,10 @@ namespace TeamSports.Controllers
                     newRow["PROD_NAME"] = item.PROD_NAME.ToString().Trim().ToString().Trim();
                     newRow["PROD_NUMBER"] = item.PROD_NUMBER.ToString().Trim();
                     newRow["UNIFYING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim();
-                    newRow["SEPERATING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim() + " - " + item.GENDER.ToString().Trim();
+                    newRow["SEPERATING_PROD_ID"] =  item.GENDER.ToString().Trim().ToLower() == "erwachsene" || item.GENDER.ToString().Trim().ToLower() == "herren" ? item.PROD_NUMBER.ToString().Trim() + " - " + "Unisex" : item.GENDER.ToString().Trim().Length>0?item.PROD_NUMBER.ToString().Trim() + " - " + item.GENDER.ToString().Trim(): item.PROD_NUMBER.ToString().Trim();
                     newRow["TITLE"] = item.PROD_NAME.ToString().Trim();
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
-                    newRow["PROD_GENDER"] = item.GENDER.ToString().Trim();
+                    newRow["PROD_GENDER"] = item.GENDER.ToString().Trim().ToLower()== "erwachsene"|| item.GENDER.ToString().Trim().ToLower() == "herren"? "Unisex": item.GENDER.ToString().Trim();
                     newRow["PROD_DESCRIPTION"] = item.DESCRIPTION.ToString().Trim();
                     newRow["HTML_BODY"] = "".ToString().Trim();
                     newRow["VENDOR"] = "".ToString().Trim();
@@ -614,7 +617,7 @@ namespace TeamSports.Controllers
                     newRow["EXTRA_OPT_NAME"] = "".ToString().Trim();
                     newRow["EXTRA_OPT_VAL"] = "".ToString().Trim();
                     newRow["VERSION_NAME"] = "".ToString().Trim();
-                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim();
+                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim()?.Replace('.',',');
                     newRow["VARIANT_GRAMS"] = "".ToString().Trim();
                     newRow["VARIANT_INV_TRACKER"] = "".ToString().Trim();
                     newRow["VARIANT_INV_QTY"] = "".ToString().Trim();
@@ -640,7 +643,7 @@ namespace TeamSports.Controllers
                                     item.DigizuitePackshot6?.ToString().Trim().TrimEnd(',')
                                 };
 
-                    newRow["VARIANT_IMAGE"] = string.Join(",", items.Where(x => !string.IsNullOrEmpty(x)));
+                    newRow["VARIANT_IMAGE"] = "";
                     newRow["VARIANT_WEIGHT_UNIT"] = "".ToString().Trim();
                     newRow["VARIANT_TAX_CODE"] = "".ToString().Trim();
                     newRow["COST_PER_ITEM"] = "".ToString().Trim();
@@ -735,7 +738,7 @@ namespace TeamSports.Controllers
                 dataTable = SortDataTable(dt, "Artikelnummer", "Groesse", "FarbeDE");
 
                 var groupedData = from row in dataTable.AsEnumerable()
-                                  group row by new { PROD_NAME = row["ArtikelnameDE"], PROD_NUMBER = row["Artikelnummer"], LINE = row["Linie"], TYPE = row["ProduktartDE"], BASE_PRICE = row["DEEmpfVKEUR"], GENDER = row["ZielgruppeDE"], DESCRIPTION = row["SonstigesDE"] } into grp
+                                  group row by new { PROD_NAME = row["ArtikelnameDE"], PROD_NUMBER = row["Artikelnummer"], LINE = row["Linie"], TYPE = row["ProduktartDE"], BASE_PRICE = row["DEEmpfVKEUR"], GENDER = row["ZielgruppeDE"], DESCRIPTION = row["MarketingtextundUSPsDE"] } into grp
                                   select new
                                   {
                                       PROD_NAME = grp.Key.PROD_NAME,
@@ -766,10 +769,10 @@ namespace TeamSports.Controllers
                     newRow["PROD_NAME"] = item.PROD_NAME.ToString().Trim().ToString().Trim();
                     newRow["PROD_NUMBER"] = item.PROD_NUMBER.ToString().Trim();
                     newRow["UNIFYING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim();
-                    newRow["SEPERATING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim() + " - " + item.GENDER.ToString().Trim();
+                    newRow["SEPERATING_PROD_ID"] =  item.GENDER.ToString().Trim().ToLower() == "erwachsene" || item.GENDER.ToString().Trim().ToLower() == "herren" ? item.PROD_NUMBER.ToString().Trim() + " - " + "Unisex" : item.GENDER.ToString().Trim().Length>0?item.PROD_NUMBER.ToString().Trim() + " - " + item.GENDER.ToString().Trim(): item.PROD_NUMBER.ToString().Trim();
                     newRow["TITLE"] = item.PROD_NAME.ToString().Trim();
                     newRow["PRODUCT_TYPE"] = item.TYPE.ToString().Trim();
-                    newRow["PROD_GENDER"] = item.GENDER.ToString().Trim();
+                    newRow["PROD_GENDER"] = item.GENDER.ToString().Trim().ToLower()== "erwachsene"|| item.GENDER.ToString().Trim().ToLower() == "herren"? "Unisex": item.GENDER.ToString().Trim();
                     newRow["PROD_DESCRIPTION"] = item.DESCRIPTION.ToString().Trim();
                     newRow["HTML_BODY"] = "".ToString().Trim();
                     newRow["VENDOR"] = "".ToString().Trim();
@@ -784,7 +787,7 @@ namespace TeamSports.Controllers
                     newRow["EXTRA_OPT_NAME"] = "".ToString().Trim();
                     newRow["EXTRA_OPT_VAL"] = "".ToString().Trim();
                     newRow["VERSION_NAME"] = "".ToString().Trim();
-                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim();
+                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim()?.Replace('.',',');
                     newRow["VARIANT_GRAMS"] = "".ToString().Trim();
                     newRow["VARIANT_INV_TRACKER"] = "".ToString().Trim();
                     newRow["VARIANT_INV_QTY"] = "".ToString().Trim();
@@ -1015,10 +1018,10 @@ namespace TeamSports.Controllers
                     newRow["PROD_NAME"] = item.PROD_NAME.ToString().Trim().ToString().Trim();
                     newRow["PROD_NUMBER"] = item.PROD_NUMBER.ToString().Trim();
                     newRow["UNIFYING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim();
-                    newRow["SEPERATING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim() + " - " + item.GENDER.ToString().Trim();
+                    newRow["SEPERATING_PROD_ID"] =  item.GENDER.ToString().Trim().ToLower() == "erwachsene" || item.GENDER.ToString().Trim().ToLower() == "herren" ? item.PROD_NUMBER.ToString().Trim() + " - " + "Unisex" : item.GENDER.ToString().Trim().Length>0?item.PROD_NUMBER.ToString().Trim() + " - " + item.GENDER.ToString().Trim(): item.PROD_NUMBER.ToString().Trim();
                     newRow["TITLE"] = item.PROD_NAME.ToString().Trim();
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
-                    newRow["PROD_GENDER"] = item.GENDER.ToString().Trim();
+                    newRow["PROD_GENDER"] = item.GENDER.ToString().Trim().ToLower()== "erwachsene"|| item.GENDER.ToString().Trim().ToLower() == "herren"? "Unisex": item.GENDER.ToString().Trim();
                     newRow["PROD_DESCRIPTION"] = item.DESCRIPTION.ToString().Trim();
                     newRow["HTML_BODY"] = "".ToString().Trim();
                     newRow["VENDOR"] = "".ToString().Trim();
@@ -1033,7 +1036,7 @@ namespace TeamSports.Controllers
                     newRow["EXTRA_OPT_NAME"] = "".ToString().Trim();
                     newRow["EXTRA_OPT_VAL"] = "".ToString().Trim();
                     newRow["VERSION_NAME"] = "".ToString().Trim();
-                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim();
+                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim()?.Replace('.',',');
                     newRow["VARIANT_GRAMS"] = "".ToString().Trim();
                     newRow["VARIANT_INV_TRACKER"] = "".ToString().Trim();
                     newRow["VARIANT_INV_QTY"] = "".ToString().Trim();
@@ -1177,7 +1180,7 @@ namespace TeamSports.Controllers
                     newRow["PROD_NAME"] = item.PROD_NAME.ToString().Trim().ToString().Trim();
                     newRow["PROD_NUMBER"] = item.PROD_NUMBER.ToString().Trim();
                     newRow["UNIFYING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim();
-                    newRow["SEPERATING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim() + " - " + item.GENDER.ToString().Trim();
+                    newRow["SEPERATING_PROD_ID"] =  item.GENDER.ToString().Trim().ToLower() == "erwachsene" || item.GENDER.ToString().Trim().ToLower() == "herren" ? item.PROD_NUMBER.ToString().Trim() + " - " + "Unisex" : item.GENDER.ToString().Trim().Length>0?item.PROD_NUMBER.ToString().Trim() + " - " + item.GENDER.ToString().Trim(): item.PROD_NUMBER.ToString().Trim();
                     newRow["TITLE"] = item.PROD_NAME.ToString().Trim();
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
                     newRow["PROD_GENDER"] = item.GENDER.ToString().Trim() + " " + item.AGE_GROUP.ToString().Trim();
@@ -1195,7 +1198,7 @@ namespace TeamSports.Controllers
                     newRow["EXTRA_OPT_NAME"] = "".ToString().Trim();
                     newRow["EXTRA_OPT_VAL"] = "".ToString().Trim();
                     newRow["VERSION_NAME"] = "".ToString().Trim();
-                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim();
+                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim()?.Replace('.',',');
                     newRow["VARIANT_GRAMS"] = "".ToString().Trim();
                     newRow["VARIANT_INV_TRACKER"] = "".ToString().Trim();
                     newRow["VARIANT_INV_QTY"] = "".ToString().Trim();
