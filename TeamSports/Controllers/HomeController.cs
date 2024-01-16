@@ -5,9 +5,11 @@ using Google.Apis.Sheets.v4.Data;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using System.Data;
+using System.Data.Common;
 using System.Data.OleDb;
 using System.Data.SqlClient;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using TeamSports.DAL;
 using TeamSports.Models;
@@ -229,32 +231,10 @@ namespace TeamSports.Controllers
         {
             try
             {
-                string TableName = vFileType == "Brand" ? vBrandName + "_TMP" : vBrandName + "_scrap_TMP";
-
-                // Delete any existing data regarding selected brand
-                int i = _dal.DeleteBrandFiles(TableName, "");
 
                 var config = _basicUtilities.GetConfiguration();
+
                 string conString = config.GetSection("ConnectionStrings:sqlconnection").Value;
-
-                using (SqlConnection con = new SqlConnection(conString))
-                {
-
-                    using (SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(con))
-                    {
-                        sqlBulkCopy.BulkCopyTimeout = 600;
-                        sqlBulkCopy.DestinationTableName = "dbo." + TableName;
-                        DataColumnCollection dataColumnCollection = dt.Columns;
-                        for (int j = 0; j < dataColumnCollection.Count; j++)
-                        {
-                            string columnName = dataColumnCollection[j].ToString()?.Replace(" ","");
-                            sqlBulkCopy.ColumnMappings.Add(columnName, columnName);
-                        }
-                        con.Open();
-                        sqlBulkCopy.WriteToServer(dt);
-                        con.Close();
-                    }
-                }
                 DataTable FinalData = new DataTable();
 
                 if (vBrandName == "PUMA" && vFileType == "Brand")
@@ -281,7 +261,7 @@ namespace TeamSports.Controllers
                 {
 
                     string FinalTable = "MAIN_SHEET_TMP";
-                    i = _dal.DeleteBrandFiles(FinalTable, vBrandID);
+                    int i = _dal.DeleteBrandFiles(FinalTable, vBrandID);
                     using (SqlConnection con = new SqlConnection(conString))
                     {
                         using (SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(con))
@@ -417,6 +397,69 @@ namespace TeamSports.Controllers
                                       COLORNAME = string.Join(";", grp.Select(r => r["Color"]).Distinct())
                                   };
 
+                string TableName = "EAN_DB";
+
+                // Delete any existing data regarding selected brand
+                int i = _dal.DeleteBrandFiles(TableName, vBrandID);
+
+
+                DataTable EAN_DB_DATA = new DataTable();
+                EAN_DB_DATA.Columns.Add("BRAND_ID");
+                EAN_DB_DATA.Columns.Add("BRAND_NAME");
+                EAN_DB_DATA.Columns.Add("PRODUCT_NAME");
+                EAN_DB_DATA.Columns.Add("PRODUCT_NUMBER");
+                EAN_DB_DATA.Columns.Add("PRODUCT_GENDER");
+                EAN_DB_DATA.Columns.Add("PRICE_UVP");
+                EAN_DB_DATA.Columns.Add("EAN");
+                EAN_DB_DATA.Columns.Add("SIZE");
+                EAN_DB_DATA.Columns.Add("COLOR_CODE");
+                EAN_DB_DATA.Columns.Add("COLOR_NAME");
+
+                foreach (DataRow row in dt.Rows)
+                {
+                    var newRow = EAN_DB_DATA.NewRow();
+                    newRow["BRAND_ID"] = vBrandID;
+                    newRow["BRAND_NAME"] = vBrandName;
+                    newRow["PRODUCT_NAME"] = row["Name"];
+                    string PROD_NUMBER = vBrandName.ToLower() == "nike" && row["ProductNumber"].ToString().Trim().Contains('-') ? row["ProductNumber"].ToString().Trim().Split('-')[0] : row["ProductNumber"].ToString().Trim();
+                    string ColorCode = vBrandName.ToLower() == "nike" && row["ProductNumber"].ToString().Trim().Contains('-') ? row["ProductNumber"].ToString().Trim().Split('-')[1] : "0";
+                    newRow["PRODUCT_NUMBER"] = PROD_NUMBER;
+                    newRow["PRODUCT_GENDER"] = GenderMapping(row["Gender"].ToString());
+                    newRow["PRICE_UVP"] = row["Price"].ToString().Trim()?.Replace('.', ',');
+                    newRow["EAN"] = row["EAN"];
+                    newRow["SIZE"] = row["Size"];
+                    newRow["COLOR_CODE"] = ColorCode;
+                    newRow["COLOR_NAME"] = row["Color"];
+                    EAN_DB_DATA.Rows.Add(newRow);
+                }
+
+
+
+                var config = _basicUtilities.GetConfiguration();
+                string conString = config.GetSection("ConnectionStrings:sqlconnection").Value;
+                using (SqlConnection con = new SqlConnection(conString))
+                {
+
+                    using (SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(con))
+                    {
+
+                        sqlBulkCopy.BulkCopyTimeout = 600;
+                        sqlBulkCopy.DestinationTableName = "dbo." + TableName;
+                        DataColumnCollection dataColumnCollection = EAN_DB_DATA.Columns;
+                        for (int j = 0; j < dataColumnCollection.Count; j++)
+                        {
+                            string columnName = dataColumnCollection[j].ToString()?.Replace(" ", "");
+                            sqlBulkCopy.ColumnMappings.Add(columnName, columnName);
+                        }
+                        con.Open();
+                        sqlBulkCopy.WriteToServer(EAN_DB_DATA);
+                        con.Close();
+                    }
+                }
+
+
+
+
 
 
                 string expression = "<.*?>";
@@ -436,10 +479,14 @@ namespace TeamSports.Controllers
 
                     newRow["PROD_NUMBER"] = PROD_NUMBER;
                     newRow["UNIFYING_PROD_ID"] = PROD_NUMBER;
-                    newRow["SEPERATING_PROD_ID"] =  item.GENDER.ToString().Trim().ToLower() == "erwachsene" || item.GENDER.ToString().Trim().ToLower() == "herren" ? PROD_NUMBER + " - " + "Unisex" : item.GENDER.ToString().Trim().Length>0? PROD_NUMBER + " - " + item.GENDER.ToString().Trim(): PROD_NUMBER;
+
+
+                    string gender = GenderMapping(item.GENDER.ToString());
+                    newRow["SEPERATING_PROD_ID"] = gender.Trim().Length > 0 ? item.PROD_NUMBER.ToString().Trim() + " - " + gender.Trim() : item.PROD_NUMBER.ToString().Trim();
+
                     newRow["TITLE"] = item.PROD_NAME.ToString().Trim();
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
-                    newRow["PROD_GENDER"] = item.GENDER.ToString().Trim().ToLower()== "erwachsene"|| item.GENDER.ToString().Trim().ToLower() == "herren"? "Unisex": item.GENDER.ToString().Trim();
+                    newRow["PROD_GENDER"] = gender.Trim();
                     newRow["PROD_DESCRIPTION"] = Regex.Replace(item.DESCRIPTION.ToString().Trim(), expression, " ").Trim();
                     newRow["HTML_BODY"] = "".ToString().Trim();
                     newRow["VENDOR"] = "".ToString().Trim();
@@ -454,7 +501,7 @@ namespace TeamSports.Controllers
                     newRow["EXTRA_OPT_NAME"] = "".ToString().Trim();
                     newRow["EXTRA_OPT_VAL"] = "".ToString().Trim();
                     newRow["VERSION_NAME"] = "".ToString().Trim();
-                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim()?.Replace('.',',');
+                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim()?.Replace('.', ',');
                     newRow["VARIANT_GRAMS"] = "".ToString().Trim();
                     newRow["VARIANT_INV_TRACKER"] = "".ToString().Trim();
                     newRow["VARIANT_INV_QTY"] = "".ToString().Trim();
@@ -585,6 +632,67 @@ namespace TeamSports.Controllers
                                   };
 
 
+                string TableName = "EAN_DB";
+
+                // Delete any existing data regarding selected brand
+                int i = _dal.DeleteBrandFiles(TableName, vBrandID);
+
+
+                DataTable EAN_DB_DATA = new DataTable();
+                EAN_DB_DATA.Columns.Add("BRAND_ID");
+                EAN_DB_DATA.Columns.Add("BRAND_NAME");
+                EAN_DB_DATA.Columns.Add("PRODUCT_NAME");
+                EAN_DB_DATA.Columns.Add("PRODUCT_NUMBER");
+                EAN_DB_DATA.Columns.Add("PRODUCT_GENDER");
+                EAN_DB_DATA.Columns.Add("PRICE_UVP");
+                EAN_DB_DATA.Columns.Add("EAN");
+                EAN_DB_DATA.Columns.Add("SIZE");
+                EAN_DB_DATA.Columns.Add("COLOR_CODE");
+                EAN_DB_DATA.Columns.Add("COLOR_NAME");
+
+                foreach (DataRow row in dt.Rows)
+                {
+                    var newRow = EAN_DB_DATA.NewRow();
+                    newRow["BRAND_ID"] = vBrandID;
+                    newRow["BRAND_NAME"] = vBrandName;
+                    newRow["PRODUCT_NAME"] = row["StyleName"];
+                    newRow["PRODUCT_NUMBER"] = row["StyleNo"];
+                    newRow["PRODUCT_GENDER"] = GenderMapping(row["Geschlecht(DE)"].ToString());
+                    newRow["PRICE_UVP"] = row["LISTPRICEDEEUR"].ToString().Trim()?.Replace('.', ',');
+                    newRow["EAN"] = row["EAN"];
+                    newRow["SIZE"] = row["Größe"];
+                    newRow["COLOR_CODE"] = row["ColorCode"];
+                    newRow["COLOR_NAME"] = row["lookupColorName"];
+                    EAN_DB_DATA.Rows.Add(newRow);
+                }
+
+
+
+                var config = _basicUtilities.GetConfiguration();
+                string conString = config.GetSection("ConnectionStrings:sqlconnection").Value;
+                using (SqlConnection con = new SqlConnection(conString))
+                {
+
+                    using (SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(con))
+                    {
+
+                        sqlBulkCopy.BulkCopyTimeout = 600;
+                        sqlBulkCopy.DestinationTableName = "dbo." + TableName;
+                        DataColumnCollection dataColumnCollection = EAN_DB_DATA.Columns;
+                        for (int j = 0; j < dataColumnCollection.Count; j++)
+                        {
+                            string columnName = dataColumnCollection[j].ToString()?.Replace(" ", "");
+                            sqlBulkCopy.ColumnMappings.Add(columnName, columnName);
+                        }
+                        con.Open();
+                        sqlBulkCopy.WriteToServer(EAN_DB_DATA);
+                        con.Close();
+                    }
+                }
+
+
+
+
 
 
                 foreach (var item in groupedData)
@@ -599,10 +707,11 @@ namespace TeamSports.Controllers
                     newRow["PROD_NAME"] = item.PROD_NAME.ToString().Trim().ToString().Trim();
                     newRow["PROD_NUMBER"] = item.PROD_NUMBER.ToString().Trim();
                     newRow["UNIFYING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim();
-                    newRow["SEPERATING_PROD_ID"] =  item.GENDER.ToString().Trim().ToLower() == "erwachsene" || item.GENDER.ToString().Trim().ToLower() == "herren" ? item.PROD_NUMBER.ToString().Trim() + " - " + "Unisex" : item.GENDER.ToString().Trim().Length>0?item.PROD_NUMBER.ToString().Trim() + " - " + item.GENDER.ToString().Trim(): item.PROD_NUMBER.ToString().Trim();
-                    newRow["TITLE"] = item.PROD_NAME.ToString().Trim();
+
+                    string gender = GenderMapping(item.GENDER.ToString());
+                    newRow["SEPERATING_PROD_ID"] = gender.Trim().Length > 0 ? item.PROD_NUMBER.ToString().Trim() + " - " + gender.Trim() : item.PROD_NUMBER.ToString().Trim();
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
-                    newRow["PROD_GENDER"] = item.GENDER.ToString().Trim().ToLower()== "erwachsene"|| item.GENDER.ToString().Trim().ToLower() == "herren"? "Unisex": item.GENDER.ToString().Trim();
+                    newRow["PROD_GENDER"] = gender.Trim();
                     newRow["PROD_DESCRIPTION"] = item.DESCRIPTION.ToString().Trim();
                     newRow["HTML_BODY"] = "".ToString().Trim();
                     newRow["VENDOR"] = "".ToString().Trim();
@@ -617,7 +726,7 @@ namespace TeamSports.Controllers
                     newRow["EXTRA_OPT_NAME"] = "".ToString().Trim();
                     newRow["EXTRA_OPT_VAL"] = "".ToString().Trim();
                     newRow["VERSION_NAME"] = "".ToString().Trim();
-                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim()?.Replace('.',',');
+                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim()?.Replace('.', ',');
                     newRow["VARIANT_GRAMS"] = "".ToString().Trim();
                     newRow["VARIANT_INV_TRACKER"] = "".ToString().Trim();
                     newRow["VARIANT_INV_QTY"] = "".ToString().Trim();
@@ -756,6 +865,76 @@ namespace TeamSports.Controllers
 
 
 
+                string TableName = "EAN_DB";
+
+                // Delete any existing data regarding selected brand
+                int i = _dal.DeleteBrandFiles(TableName, vBrandID);
+
+
+                DataTable EAN_DB_DATA = new DataTable();
+                EAN_DB_DATA.Columns.Add("BRAND_ID");
+                EAN_DB_DATA.Columns.Add("BRAND_NAME");
+                EAN_DB_DATA.Columns.Add("PRODUCT_NAME");
+                EAN_DB_DATA.Columns.Add("PRODUCT_NUMBER");
+                EAN_DB_DATA.Columns.Add("PRODUCT_GENDER");
+                EAN_DB_DATA.Columns.Add("PRICE_UVP");
+                EAN_DB_DATA.Columns.Add("EAN");
+                EAN_DB_DATA.Columns.Add("SIZE");
+                EAN_DB_DATA.Columns.Add("COLOR_CODE");
+                EAN_DB_DATA.Columns.Add("COLOR_NAME");
+
+                foreach (DataRow row in dt.Rows)
+                {
+                    var newRow = EAN_DB_DATA.NewRow();
+                    newRow["BRAND_ID"] = vBrandID;
+                    newRow["BRAND_NAME"] = vBrandName;
+                    newRow["PRODUCT_NAME"] = row["ArtikelnameDE"];
+                    newRow["PRODUCT_NUMBER"] = row["Artikelnummer"];
+                    newRow["PRODUCT_GENDER"] = GenderMapping(row["ZielgruppeDE"].ToString());
+                    newRow["PRICE_UVP"] = row["DEEmpfVKEUR"].ToString().Trim()?.Replace('.', ',');
+                    newRow["EAN"] = row["EANCode"];
+                    newRow["SIZE"] = row["Groesse"];
+                    newRow["COLOR_CODE"] = 0;
+                    newRow["COLOR_NAME"] = row["FarbeDE"];
+                    EAN_DB_DATA.Rows.Add(newRow);
+                }
+
+
+
+                var config = _basicUtilities.GetConfiguration();
+                string conString = config.GetSection("ConnectionStrings:sqlconnection").Value;
+                using (SqlConnection con = new SqlConnection(conString))
+                {
+
+                    using (SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(con))
+                    {
+
+                        sqlBulkCopy.BulkCopyTimeout = 600;
+                        sqlBulkCopy.DestinationTableName = "dbo." + TableName;
+                        DataColumnCollection dataColumnCollection = EAN_DB_DATA.Columns;
+                        for (int j = 0; j < dataColumnCollection.Count; j++)
+                        {
+                            string columnName = dataColumnCollection[j].ToString()?.Replace(" ", "");
+                            sqlBulkCopy.ColumnMappings.Add(columnName, columnName);
+                        }
+                        con.Open();
+                        sqlBulkCopy.WriteToServer(EAN_DB_DATA);
+                        con.Close();
+                    }
+                }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
                 foreach (var item in groupedData)
                 {
@@ -769,10 +948,12 @@ namespace TeamSports.Controllers
                     newRow["PROD_NAME"] = item.PROD_NAME.ToString().Trim().ToString().Trim();
                     newRow["PROD_NUMBER"] = item.PROD_NUMBER.ToString().Trim();
                     newRow["UNIFYING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim();
-                    newRow["SEPERATING_PROD_ID"] =  item.GENDER.ToString().Trim().ToLower() == "erwachsene" || item.GENDER.ToString().Trim().ToLower() == "herren" ? item.PROD_NUMBER.ToString().Trim() + " - " + "Unisex" : item.GENDER.ToString().Trim().Length>0?item.PROD_NUMBER.ToString().Trim() + " - " + item.GENDER.ToString().Trim(): item.PROD_NUMBER.ToString().Trim();
+
+                    string gender = GenderMapping(item.GENDER.ToString());
+                    newRow["SEPERATING_PROD_ID"] = gender.Trim().Length > 0 ? item.PROD_NUMBER.ToString().Trim() + " - " + gender.Trim() : item.PROD_NUMBER.ToString().Trim();
                     newRow["TITLE"] = item.PROD_NAME.ToString().Trim();
                     newRow["PRODUCT_TYPE"] = item.TYPE.ToString().Trim();
-                    newRow["PROD_GENDER"] = item.GENDER.ToString().Trim().ToLower()== "erwachsene"|| item.GENDER.ToString().Trim().ToLower() == "herren"? "Unisex": item.GENDER.ToString().Trim();
+                    newRow["PROD_GENDER"] = gender.Trim();
                     newRow["PROD_DESCRIPTION"] = item.DESCRIPTION.ToString().Trim();
                     newRow["HTML_BODY"] = "".ToString().Trim();
                     newRow["VENDOR"] = "".ToString().Trim();
@@ -787,7 +968,7 @@ namespace TeamSports.Controllers
                     newRow["EXTRA_OPT_NAME"] = "".ToString().Trim();
                     newRow["EXTRA_OPT_VAL"] = "".ToString().Trim();
                     newRow["VERSION_NAME"] = "".ToString().Trim();
-                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim()?.Replace('.',',');
+                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim()?.Replace('.', ',');
                     newRow["VARIANT_GRAMS"] = "".ToString().Trim();
                     newRow["VARIANT_INV_TRACKER"] = "".ToString().Trim();
                     newRow["VARIANT_INV_QTY"] = "".ToString().Trim();
@@ -988,6 +1169,90 @@ namespace TeamSports.Controllers
 
 
                 dataTable = SortDataTable(dt, "ItemNo", "SIZE", "ColorDescription");
+
+
+
+
+                string TableName = "EAN_DB";
+
+                // Delete any existing data regarding selected brand
+              //  int i = _dal.DeleteBrandFiles(TableName, "");
+
+
+                DataTable EAN_DB_DATA = new DataTable();
+                EAN_DB_DATA.Columns.Add("BRAND_ID");
+                EAN_DB_DATA.Columns.Add("BRAND_NAME");
+                EAN_DB_DATA.Columns.Add("PRODUCT_NAME");
+                EAN_DB_DATA.Columns.Add("PRODUCT_NUMBER");
+                EAN_DB_DATA.Columns.Add("PRODUCT_GENDER");
+                EAN_DB_DATA.Columns.Add("PRICE_UVP");
+                EAN_DB_DATA.Columns.Add("EAN");
+                EAN_DB_DATA.Columns.Add("SIZE");
+                EAN_DB_DATA.Columns.Add("COLOR_CODE");
+                EAN_DB_DATA.Columns.Add("COLOR_NAME");
+
+                foreach (DataRow row in dt.Rows)
+                {
+                    var newRow = EAN_DB_DATA.NewRow();
+                    newRow["BRAND_ID"] = vBrandID;
+                    newRow["BRAND_NAME"] = vBrandName;
+                    newRow["PRODUCT_NAME"] = row["Description"];
+                    newRow["PRODUCT_NUMBER"] = row["ItemNo"];
+                    newRow["PRODUCT_GENDER"] = GenderMapping(row["GENDER"].ToString());
+                    newRow["PRICE_UVP"] = row["UVP"].ToString().Trim()?.Replace('.', ',');
+                    newRow["EAN"] = row["EAN"];
+                    newRow["SIZE"] = row["SIZE"];
+                    newRow["COLOR_CODE"] = row["ColorCode"];
+                    newRow["COLOR_NAME"] = row["ColorDescription"];
+                    EAN_DB_DATA.Rows.Add(newRow);
+                }
+
+               
+
+                var config = _basicUtilities.GetConfiguration();
+                string conString = config.GetSection("ConnectionStrings:sqlconnection").Value;
+                using (SqlConnection con = new SqlConnection(conString))
+                {
+
+                    using (SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(con))
+                    {
+
+                        sqlBulkCopy.BulkCopyTimeout = 600;
+                        sqlBulkCopy.DestinationTableName = "dbo." + TableName;
+                        DataColumnCollection dataColumnCollection = EAN_DB_DATA.Columns;
+                        for (int j = 0; j < dataColumnCollection.Count; j++)
+                        {
+                            string columnName = dataColumnCollection[j].ToString()?.Replace(" ", "");
+                            sqlBulkCopy.ColumnMappings.Add(columnName, columnName);
+                        }
+                        con.Open();
+                        sqlBulkCopy.WriteToServer(EAN_DB_DATA);
+                        con.Close();
+                    }
+                }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                 var groupedData = from row in dataTable.AsEnumerable()
                                   group row by new { PROD_NAME = row["Description"], PROD_NUMBER = row["ItemNo"], TITLE = row["Description"], BASE_PRICE = row["UVP"], GENDER = row["GENDER"], N = row["recommendedUVP"], M = row["PriceIndividual"], O = row["Text1"], P = row["Text2"], Q = row["Text3"], R = row["Text4"], S = row["Text5"] } into grp
                                   select new
@@ -1018,10 +1283,11 @@ namespace TeamSports.Controllers
                     newRow["PROD_NAME"] = item.PROD_NAME.ToString().Trim().ToString().Trim();
                     newRow["PROD_NUMBER"] = item.PROD_NUMBER.ToString().Trim();
                     newRow["UNIFYING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim();
-                    newRow["SEPERATING_PROD_ID"] =  item.GENDER.ToString().Trim().ToLower() == "erwachsene" || item.GENDER.ToString().Trim().ToLower() == "herren" ? item.PROD_NUMBER.ToString().Trim() + " - " + "Unisex" : item.GENDER.ToString().Trim().Length>0?item.PROD_NUMBER.ToString().Trim() + " - " + item.GENDER.ToString().Trim(): item.PROD_NUMBER.ToString().Trim();
+                    string gender = GenderMapping(item.GENDER.ToString());
+                    newRow["SEPERATING_PROD_ID"] = gender.Trim().Length > 0 ? item.PROD_NUMBER.ToString().Trim() + " - " + gender.Trim() : item.PROD_NUMBER.ToString().Trim();
                     newRow["TITLE"] = item.PROD_NAME.ToString().Trim();
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
-                    newRow["PROD_GENDER"] = item.GENDER.ToString().Trim().ToLower()== "erwachsene"|| item.GENDER.ToString().Trim().ToLower() == "herren"? "Unisex": item.GENDER.ToString().Trim();
+                    newRow["PROD_GENDER"] = gender.Trim();
                     newRow["PROD_DESCRIPTION"] = item.DESCRIPTION.ToString().Trim();
                     newRow["HTML_BODY"] = "".ToString().Trim();
                     newRow["VENDOR"] = "".ToString().Trim();
@@ -1036,7 +1302,7 @@ namespace TeamSports.Controllers
                     newRow["EXTRA_OPT_NAME"] = "".ToString().Trim();
                     newRow["EXTRA_OPT_VAL"] = "".ToString().Trim();
                     newRow["VERSION_NAME"] = "".ToString().Trim();
-                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim()?.Replace('.',',');
+                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim()?.Replace('.', ',');
                     newRow["VARIANT_GRAMS"] = "".ToString().Trim();
                     newRow["VARIANT_INV_TRACKER"] = "".ToString().Trim();
                     newRow["VARIANT_INV_QTY"] = "".ToString().Trim();
@@ -1149,6 +1415,65 @@ namespace TeamSports.Controllers
 
                 dataTable = SortDataTable(dt, "STYLE", "SIZE", "COLOR_NAME");
 
+
+                string TableName = "EAN_DB";
+
+                // Delete any existing data regarding selected brand
+                int i = _dal.DeleteBrandFiles(TableName, vBrandID);
+
+
+                DataTable EAN_DB_DATA = new DataTable();
+                EAN_DB_DATA.Columns.Add("BRAND_ID");
+                EAN_DB_DATA.Columns.Add("BRAND_NAME");
+                EAN_DB_DATA.Columns.Add("PRODUCT_NAME");
+                EAN_DB_DATA.Columns.Add("PRODUCT_NUMBER");
+                EAN_DB_DATA.Columns.Add("PRODUCT_GENDER");
+                EAN_DB_DATA.Columns.Add("PRICE_UVP");
+                EAN_DB_DATA.Columns.Add("EAN");
+                EAN_DB_DATA.Columns.Add("SIZE");
+                EAN_DB_DATA.Columns.Add("COLOR_CODE");
+                EAN_DB_DATA.Columns.Add("COLOR_NAME");
+
+                foreach (DataRow row in dt.Rows)
+                {
+                    var newRow = EAN_DB_DATA.NewRow();
+                    newRow["BRAND_ID"] = vBrandID;
+                    newRow["BRAND_NAME"] = vBrandName;
+                    newRow["PRODUCT_NAME"] = row["STYLE_NAME"];
+                    newRow["PRODUCT_NUMBER"] = row["STYLE"];
+                    newRow["PRODUCT_GENDER"] = GenderMapping(row["GENDER"].ToString());
+                    newRow["PRICE_UVP"] = row["UVP_DE"].ToString().Trim()?.Replace('.', ',');
+                    newRow["EAN"] = row["EAN"];
+                    newRow["SIZE"] = row["SIZE"];
+                    newRow["COLOR_CODE"] = row["COLOR"];
+                    newRow["COLOR_NAME"] = row["COLOR_NAME"];
+                    EAN_DB_DATA.Rows.Add(newRow);
+                }
+
+
+
+                var config = _basicUtilities.GetConfiguration();
+                string conString = config.GetSection("ConnectionStrings:sqlconnection").Value;
+                using (SqlConnection con = new SqlConnection(conString))
+                {
+
+                    using (SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(con))
+                    {
+
+                        sqlBulkCopy.BulkCopyTimeout = 600;
+                        sqlBulkCopy.DestinationTableName = "dbo." + TableName;
+                        DataColumnCollection dataColumnCollection = EAN_DB_DATA.Columns;
+                        for (int j = 0; j < dataColumnCollection.Count; j++)
+                        {
+                            string columnName = dataColumnCollection[j].ToString()?.Replace(" ", "");
+                            sqlBulkCopy.ColumnMappings.Add(columnName, columnName);
+                        }
+                        con.Open();
+                        sqlBulkCopy.WriteToServer(EAN_DB_DATA);
+                        con.Close();
+                    }
+                }
+
                 var groupedData = from row in dataTable.AsEnumerable()
                                   group row by new { PROD_NAME = row["STYLE_NAME"], PROD_NUMBER = row["STYLE"], TITLE = row["STYLE_NAME"], BASE_PRICE = row["UVP_DE"], GENDER = row["GENDER"], PRODUCT_DIVISION = row["PRODUCT_DIVISION"] } into grp
                                   select new
@@ -1180,10 +1505,11 @@ namespace TeamSports.Controllers
                     newRow["PROD_NAME"] = item.PROD_NAME.ToString().Trim().ToString().Trim();
                     newRow["PROD_NUMBER"] = item.PROD_NUMBER.ToString().Trim();
                     newRow["UNIFYING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim();
-                    newRow["SEPERATING_PROD_ID"] =  item.GENDER.ToString().Trim().ToLower() == "erwachsene" || item.GENDER.ToString().Trim().ToLower() == "herren" ? item.PROD_NUMBER.ToString().Trim() + " - " + "Unisex" : item.GENDER.ToString().Trim().Length>0?item.PROD_NUMBER.ToString().Trim() + " - " + item.GENDER.ToString().Trim(): item.PROD_NUMBER.ToString().Trim();
+                    string gender = GenderMapping(item.GENDER.ToString().Trim());
+                    newRow["SEPERATING_PROD_ID"] = gender.ToString().Trim().Length > 0 ? item.PROD_NUMBER.ToString().Trim() + " - " + gender : item.PROD_NUMBER.ToString().Trim();
                     newRow["TITLE"] = item.PROD_NAME.ToString().Trim();
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
-                    newRow["PROD_GENDER"] = item.GENDER.ToString().Trim() + " " + item.AGE_GROUP.ToString().Trim();
+                    newRow["PROD_GENDER"] = gender.Trim();
                     newRow["PROD_DESCRIPTION"] = "".ToString().Trim();
                     newRow["HTML_BODY"] = "".ToString().Trim();
                     newRow["VENDOR"] = "".ToString().Trim();
@@ -1198,7 +1524,7 @@ namespace TeamSports.Controllers
                     newRow["EXTRA_OPT_NAME"] = "".ToString().Trim();
                     newRow["EXTRA_OPT_VAL"] = "".ToString().Trim();
                     newRow["VERSION_NAME"] = "".ToString().Trim();
-                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim()?.Replace('.',',');
+                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim()?.Replace('.', ',');
                     newRow["VARIANT_GRAMS"] = "".ToString().Trim();
                     newRow["VARIANT_INV_TRACKER"] = "".ToString().Trim();
                     newRow["VARIANT_INV_QTY"] = "".ToString().Trim();
@@ -1300,6 +1626,53 @@ namespace TeamSports.Controllers
             }
         }
 
+
+        private string GenderMapping(string gender)
+        {
+            var mappingList = new List<(string, string)>
+        {
+            ("Unisex","Unisex"),
+            ("erwachsene","Unisex"),
+            ("herren","Unisex"),
+            ("Damen","Damen"),
+            ("Unisex Kinder","Kinder"),
+            ("Unisex Adults","Unisex"),
+            ("Unisex Youth","Kinder"),
+            ("Male","Unisex"),
+            ("Male Adults","Unisex"),
+            ("Female All Ages","Damen"),
+            ("Unisex Youth + Adults","Unisex"),
+            ("Male Youth","Kinder"),
+            ("Female","Damen"),
+            ("Female Adults","Damen"),
+            ("Unisex All Ages","Unisex"),
+            ("Female Youth + Adults","Damen"),
+            ("Kinder","Kinder"),
+            ("Jungen","Kinder"),
+            ("Mädchen","Kinder"),
+            ("Female Youth","Kinder"),
+            ("Unisex Pre-School","Kinder"),
+            ("Unisex Infant","Kinder"),
+            ("Male Pre-School","Kinder"),
+            ("Male Infant","Kinder"),
+            ("Female Pre-School","Kinder")
+        };
+            var mappingDictionary = new Dictionary<string, string>();
+            foreach (var mapping in mappingList)
+            {
+                mappingDictionary[mapping.Item1.Trim().ToLower()] = mapping.Item2.Trim().ToLower();
+            }
+            if (mappingDictionary.ContainsKey(gender.Trim().ToLower()))
+            {
+                gender = mappingDictionary[gender.Trim().ToLower()];
+            }
+
+            TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
+            gender = textInfo.ToTitleCase(gender);
+
+            return gender;
+
+        }
         [HttpPost]
         public JsonResult GET_DB_DATA()
         {
@@ -1326,37 +1699,37 @@ namespace TeamSports.Controllers
         }
 
 
-		//[HttpPost]
-		//public JsonResult MAIN_SHEET_DATA(string _BRANDID)
-		//{
-		//    DataTable DT_DB_DATA;
-		//    DT_DB_DATA = _dal.MAIN_SHEET_DATA(_BRANDID);
-		//    DataColumnCollection dataColumnCollection = DT_DB_DATA.Columns;
-		//    List<Dictionary<string, object>> _TblBody = _basicUtilities.GetTableRows(DT_DB_DATA);
-		//    List<string> _TblHead = new List<string>();
-		//    for (int j = 0; j < dataColumnCollection.Count; j++)
-		//    {
-		//        string columnName = dataColumnCollection[j].ToString();
-		//        _TblHead.Add(columnName);
-		//    }
-		//    return Json(new { Status = true, Body = _TblBody, Header = _TblHead });
-		//}
+        //[HttpPost]
+        //public JsonResult MAIN_SHEET_DATA(string _BRANDID)
+        //{
+        //    DataTable DT_DB_DATA;
+        //    DT_DB_DATA = _dal.MAIN_SHEET_DATA(_BRANDID);
+        //    DataColumnCollection dataColumnCollection = DT_DB_DATA.Columns;
+        //    List<Dictionary<string, object>> _TblBody = _basicUtilities.GetTableRows(DT_DB_DATA);
+        //    List<string> _TblHead = new List<string>();
+        //    for (int j = 0; j < dataColumnCollection.Count; j++)
+        //    {
+        //        string columnName = dataColumnCollection[j].ToString();
+        //        _TblHead.Add(columnName);
+        //    }
+        //    return Json(new { Status = true, Body = _TblBody, Header = _TblHead });
+        //}
 
-		[HttpPost]
-		public JsonResult MAIN_SHEET_DATA(string _BRANDID)
-		{
-			DataTable DT_DB_DATA;
-			DT_DB_DATA = _dal.MAIN_SHEET_DATA(_BRANDID);
-			
-			List<Dictionary<string, object>> _TblBody = _basicUtilities.GetTableRows(DT_DB_DATA);
-			
-			return Json(_TblBody);
-		}
+        [HttpPost]
+        public JsonResult MAIN_SHEET_DATA(string _BRANDID)
+        {
+            DataTable DT_DB_DATA;
+            DT_DB_DATA = _dal.MAIN_SHEET_DATA(_BRANDID);
 
+            List<Dictionary<string, object>> _TblBody = _basicUtilities.GetTableRows(DT_DB_DATA);
 
+            return Json(_TblBody);
+        }
 
 
-		[HttpPost]
+
+
+        [HttpPost]
         public JsonResult GET_ALT_DATA(string _TYPE)
         {
             DataTable DT_DB_DATA;
@@ -1382,9 +1755,9 @@ namespace TeamSports.Controllers
         }
 
         [HttpPost]
-        public JsonResult DISCARD_TEMP_DB()
+        public JsonResult DISCARD_TEMP_DB(int brandID)
         {
-            int output = _dal.DISCARD_TEMP_DB();
+            int output = _dal.DISCARD_TEMP_DB(brandID);
             return Json(output);
         }
 

@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using System.Data.SqlClient;
 using TeamSports.Utilities;
 namespace TeamSports.DAL
@@ -117,7 +118,7 @@ namespace TeamSports.DAL
         }
 
 
-        public int DISCARD_TEMP_DB()
+        public int DISCARD_TEMP_DB(int BrandID)
         {
             int i = 0;
             try
@@ -127,6 +128,8 @@ namespace TeamSports.DAL
                     con.Open();
                     SqlCommand cmd = new SqlCommand("DISCARD_TEMP_DB", con);
                     cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.CommandTimeout = 500;
+                    cmd.Parameters.AddWithValue("@brandid", BrandID);
                     i = cmd.ExecuteNonQuery();
                 }
                 return i;
@@ -169,7 +172,7 @@ namespace TeamSports.DAL
             int i = 0;
             using (SqlConnection con = new SqlConnection(BasicUtilities.GetConnectionString()))
             {
-                string subQuery = BrandId != "" ? " where brandId = " + BrandId : "";
+                string subQuery = QueryText== "EAN_DB"? BrandId != "" ? " where brand_id = " + BrandId : "" : BrandId != "" ? " where brandId = " + BrandId : "";
 
                 string Query = "Delete FROM " + QueryText + " " + subQuery;
                 con.Open();

@@ -240,10 +240,21 @@
                 swal.close();
                 console.log("Reposnse After Processing file", response);
                 if (response) {
+                    Swal.fire(
+                        'success',
+                        'Excel file has been sumbitted successfully. Please wait while we pull your data',
+                        'Successful!'
+                    )
+                    setTimeout(() => { Get_DB_Data(); }, 100)
 
-                    Get_DB_Data();
 
-
+                }else{
+                   
+                    Swal.fire(
+                        'Error!',
+                        'File doesn\'t have required columns.Perhaps Column name(s) are changed.Please check it.',
+                        'error'
+                    )
                 }
 
                 //var startdt1 = new Date();
@@ -253,12 +264,18 @@
             },
             error: function (response) {
                 swal.close();
+
+                Swal.fire(
+                    'Error!',
+                    'Please Try Again.',
+                    'error'
+                )
             }
         });
     });
 
     function DISCARD() {
-
+        var _brandID = $("#brand_name :selected").val();
 
         Swal.fire({
             title: "Do you want to discard the articles?",
@@ -278,6 +295,7 @@
                     type: "POST",
                     dataType: "json",
                     data: {
+                        brandID: _brandID
                     },
                     success: function (response) {
                         {

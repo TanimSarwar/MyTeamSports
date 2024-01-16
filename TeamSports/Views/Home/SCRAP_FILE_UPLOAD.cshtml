@@ -273,20 +273,22 @@
 
 
                 }
-
+                else {
+                    alert("File doesn't have required columns. Perhaps Column name(s) are changed. Please check it.");
+                }
                 //var startdt1 = new Date();
                 //swal.fire(response + "    :" + startdt + "    :" + startdt1);
 
 
             },
             error: function (response) {
-                swal.close();
+                swal.close(); alert("Try Again.");
             }
         });
     });
 
     function DISCARD() {
-
+          var _brandID = $("#brand_name :selected").val();
 
         Swal.fire({
             title: "Do you want to discard the articles?",
@@ -304,6 +306,7 @@
                     type: "POST",
                     dataType: "json",
                     data: {
+                        brandID: _brandID
                     },
                     success: function (response) {
                         {
