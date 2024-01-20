@@ -1,7 +1,9 @@
 ﻿using Google.Apis.Auth.OAuth2;
+using Google.Apis.Script.v1.Data;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using System.Data;
@@ -9,6 +11,8 @@ using System.Data.Common;
 using System.Data.OleDb;
 using System.Data.SqlClient;
 using System.Diagnostics;
+using System.Drawing.Drawing2D;
+using System.Drawing.Printing;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using TeamSports.DAL;
@@ -394,7 +398,8 @@ namespace TeamSports.Controllers
                                       BASE_PRICE = grp.Key.BASE_PRICE,
                                       EAN = string.Join(";", grp.Select(r => r["EAN"]).Distinct()),
                                       SIZE = string.Join(";", grp.Select(r => r["Size"]).Distinct()),
-                                      COLORNAME = string.Join(";", grp.Select(r => r["Color"]).Distinct())
+                                      COLORNAME = string.Join(";", grp.Select(r => r["Color"]).Distinct()),
+                                      Images = string.Join(";", grp.Select(r => r["Images"]).Distinct())
                                   };
 
                 string TableName = "EAN_DB";
@@ -414,6 +419,7 @@ namespace TeamSports.Controllers
                 EAN_DB_DATA.Columns.Add("SIZE");
                 EAN_DB_DATA.Columns.Add("COLOR_CODE");
                 EAN_DB_DATA.Columns.Add("COLOR_NAME");
+                EAN_DB_DATA.Columns.Add("IMAGE_URL"); EAN_DB_DATA.Columns.Add("STATUS");
 
                 foreach (DataRow row in dt.Rows)
                 {
@@ -430,6 +436,8 @@ namespace TeamSports.Controllers
                     newRow["SIZE"] = row["Size"];
                     newRow["COLOR_CODE"] = ColorCode;
                     newRow["COLOR_NAME"] = row["Color"];
+                    newRow["IMAGE_URL"] = row["Images"];
+                    newRow["STATUS"] = 0;
                     EAN_DB_DATA.Rows.Add(newRow);
                 }
 
@@ -515,7 +523,7 @@ namespace TeamSports.Controllers
                     newRow["IMAGE_ALT_TXT"] = "".ToString().Trim();
                     newRow["GIFT_CARD"] = "".ToString().Trim();
                     newRow["SEO_TITLE"] = "".ToString().Trim();
-                    newRow["VARIANT_IMAGE"] = "".ToString().Trim();
+                    newRow["VARIANT_IMAGE"] = item.Images.ToString().Trim();
                     newRow["VARIANT_WEIGHT_UNIT"] = "".ToString().Trim();
                     newRow["VARIANT_TAX_CODE"] = "".ToString().Trim();
                     newRow["COST_PER_ITEM"] = "".ToString().Trim();
@@ -525,12 +533,12 @@ namespace TeamSports.Controllers
 
                     string inputString = item.PROD_NAME.ToString().Trim().ToLower();
                     string stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
-                    string result = Regex.Replace(stringWithHyphens, @"[^\w\s\p{L}]", "");
+                    string result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
                     newRow["PROD_FILE_NAME"] = result;
 
                     inputString = item.COLORNAME.ToString().Trim().ToLower();
                     stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
-                    result = Regex.Replace(stringWithHyphens, @"[^\w\s\p{L}]", "");
+                    result = Regex.Replace(stringWithHyphens, @"[^\w\d;-]", "");
 
                     newRow["COLOR_NAMES"] = ";" + result;
                     resultTable.Rows.Add(newRow);
@@ -649,6 +657,7 @@ namespace TeamSports.Controllers
                 EAN_DB_DATA.Columns.Add("SIZE");
                 EAN_DB_DATA.Columns.Add("COLOR_CODE");
                 EAN_DB_DATA.Columns.Add("COLOR_NAME");
+                EAN_DB_DATA.Columns.Add("IMAGE_URL"); EAN_DB_DATA.Columns.Add("STATUS");
 
                 foreach (DataRow row in dt.Rows)
                 {
@@ -663,6 +672,10 @@ namespace TeamSports.Controllers
                     newRow["SIZE"] = row["Größe"];
                     newRow["COLOR_CODE"] = row["ColorCode"];
                     newRow["COLOR_NAME"] = row["lookupColorName"];
+                    Uri uriResult;
+                    string uriName = row["DigizuitePackshot"].ToString();
+                    //bool result = Uri.TryCreate(uriName, UriKind.Absolute, out uriResult) && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+                    newRow["IMAGE_URL"] = uriName;
                     EAN_DB_DATA.Rows.Add(newRow);
                 }
 
@@ -762,12 +775,12 @@ namespace TeamSports.Controllers
 
                     string inputString = item.PROD_NAME.ToString().Trim().ToLower();
                     string stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
-                    string result = Regex.Replace(stringWithHyphens, @"[^\w\s\p{L}]", "");
+                    string result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
                     newRow["PROD_FILE_NAME"] = result;
 
                     inputString = item.COLORNAME.ToString().Trim().ToLower();
                     stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
-                    result = Regex.Replace(stringWithHyphens, @"[^\w\s\p{L}]", "");
+                    result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
 
                     newRow["COLOR_NAMES"] = ";" + result;
                     resultTable.Rows.Add(newRow);
@@ -882,6 +895,7 @@ namespace TeamSports.Controllers
                 EAN_DB_DATA.Columns.Add("SIZE");
                 EAN_DB_DATA.Columns.Add("COLOR_CODE");
                 EAN_DB_DATA.Columns.Add("COLOR_NAME");
+                EAN_DB_DATA.Columns.Add("IMAGE_URL"); EAN_DB_DATA.Columns.Add("STATUS");
 
                 foreach (DataRow row in dt.Rows)
                 {
@@ -896,6 +910,7 @@ namespace TeamSports.Controllers
                     newRow["SIZE"] = row["Groesse"];
                     newRow["COLOR_CODE"] = 0;
                     newRow["COLOR_NAME"] = row["FarbeDE"];
+                    newRow["IMAGE_URL"] = "";
                     EAN_DB_DATA.Rows.Add(newRow);
                 }
 
@@ -992,12 +1007,12 @@ namespace TeamSports.Controllers
 
                     string inputString = item.PROD_NAME.ToString().Trim().ToLower();
                     string stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
-                    string result = Regex.Replace(stringWithHyphens, @"[^\w\s\p{L}]", "");
+                    string result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
                     newRow["PROD_FILE_NAME"] = result;
 
                     inputString = item.COLORNAME.ToString().Trim().ToLower();
                     stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
-                    result = Regex.Replace(stringWithHyphens, @"[^\w\s\p{L}]", "");
+                    result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
 
                     newRow["COLOR_NAMES"] = ";" + result;
                     resultTable.Rows.Add(newRow);
@@ -1176,7 +1191,7 @@ namespace TeamSports.Controllers
                 string TableName = "EAN_DB";
 
                 // Delete any existing data regarding selected brand
-              //  int i = _dal.DeleteBrandFiles(TableName, "");
+                int i = _dal.DeleteBrandFiles(TableName, vBrandID);
 
 
                 DataTable EAN_DB_DATA = new DataTable();
@@ -1190,6 +1205,7 @@ namespace TeamSports.Controllers
                 EAN_DB_DATA.Columns.Add("SIZE");
                 EAN_DB_DATA.Columns.Add("COLOR_CODE");
                 EAN_DB_DATA.Columns.Add("COLOR_NAME");
+                EAN_DB_DATA.Columns.Add("IMAGE_URL"); EAN_DB_DATA.Columns.Add("STATUS");
 
                 foreach (DataRow row in dt.Rows)
                 {
@@ -1204,10 +1220,12 @@ namespace TeamSports.Controllers
                     newRow["SIZE"] = row["SIZE"];
                     newRow["COLOR_CODE"] = row["ColorCode"];
                     newRow["COLOR_NAME"] = row["ColorDescription"];
+                    newRow["IMAGE_URL"] = "";
+                    newRow["STATUS"] = 0;
                     EAN_DB_DATA.Rows.Add(newRow);
                 }
 
-               
+
 
                 var config = _basicUtilities.GetConfiguration();
                 string conString = config.GetSection("ConnectionStrings:sqlconnection").Value;
@@ -1326,7 +1344,7 @@ namespace TeamSports.Controllers
 
                     string inputString = item.PROD_NAME.ToString().Trim().ToLower();
                     string stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
-                    string result = Regex.Replace(stringWithHyphens, @"[^\w\s\p{L}]", "");
+                    string result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
                     newRow["PROD_FILE_NAME"] = result;
 
                     inputString = item.COLORNAME.ToString().Trim().ToLower();
@@ -1433,6 +1451,7 @@ namespace TeamSports.Controllers
                 EAN_DB_DATA.Columns.Add("SIZE");
                 EAN_DB_DATA.Columns.Add("COLOR_CODE");
                 EAN_DB_DATA.Columns.Add("COLOR_NAME");
+                EAN_DB_DATA.Columns.Add("IMAGE_URL"); EAN_DB_DATA.Columns.Add("STATUS");
 
                 foreach (DataRow row in dt.Rows)
                 {
@@ -1447,6 +1466,7 @@ namespace TeamSports.Controllers
                     newRow["SIZE"] = row["SIZE"];
                     newRow["COLOR_CODE"] = row["COLOR"];
                     newRow["COLOR_NAME"] = row["COLOR_NAME"];
+                    newRow["IMAGE_URL"] = row["BILDLINK"];
                     EAN_DB_DATA.Rows.Add(newRow);
                 }
 
@@ -1548,12 +1568,12 @@ namespace TeamSports.Controllers
 
                     string inputString = item.PROD_NAME.ToString().Trim().ToLower();
                     string stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
-                    string result = Regex.Replace(stringWithHyphens, @"[^\w\s\p{L}]", "");
+                    string result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
                     newRow["PROD_FILE_NAME"] = result;
 
                     inputString = item.COLORNAME.ToString().Trim().ToLower();
                     stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
-                    result = Regex.Replace(stringWithHyphens, @"[^\w\s\p{L}]", "");
+                    result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
 
                     newRow["COLOR_NAMES"] = ";" + result;
                     resultTable.Rows.Add(newRow);
@@ -1593,7 +1613,8 @@ namespace TeamSports.Controllers
                 string spreadsheetId = config.GetSection("SpreadSheetID").Value.ToString();
                 string SheetName = config.GetSection("SheetName").Value.ToString();
                 string range = SheetName + "!D4:AZ";
-                int columnIndexToDelete = 0;
+
+                int columnIndexToDelete = Convert.ToInt32(config.GetSection("columnIndexToDelete").Value.ToString());
                 string valueToDelete = brandName.Trim();
                 SpreadsheetsResource.ValuesResource.GetRequest request1 =
                 service.Spreadsheets.Values.Get(spreadsheetId, range);
@@ -1614,9 +1635,85 @@ namespace TeamSports.Controllers
                 ValueRange valueRange = new ValueRange();
                 valueRange.Values = mergedList;
                 var updateRequest = service.Spreadsheets.Values.Update(valueRange, spreadsheetId, range);
-                updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
+                updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
                 var updateResponse = await updateRequest.ExecuteAsync();
                 Console.WriteLine(updateResponse.ToString());
+                return true;
+            }
+            catch (Exception r)
+            {
+                Console.WriteLine(r);
+                return false;
+            }
+        }
+
+
+        public async Task<bool> UploadDataToEANSheet(DataTable dt, string brandName, string _OP, bool check)
+        {
+            try
+            {
+                List<IList<object>> data = _basicUtilities.GetListObject(dt);
+                string[] Scopes = { SheetsService.Scope.Spreadsheets };
+                string ApplicationName = "My Team Shop";
+                string jsonCredentialsPath = "credentials.json";
+                GoogleCredential credential;
+                using (var stream = new System.IO.FileStream(jsonCredentialsPath, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                {
+                    credential = GoogleCredential.FromStream(stream).CreateScoped(Scopes);
+                }
+
+                var service = new SheetsService(new BaseClientService.Initializer()
+                {
+                    HttpClientInitializer = credential,
+                    ApplicationName = ApplicationName,
+                });
+                var config = _basicUtilities.GetConfiguration();
+
+                string spreadsheetId = config.GetSection("EanSpreadSheetID").Value.ToString();
+                string SheetName = config.GetSection("EanSheetName").Value.ToString();
+                string range = SheetName + "!A2:J";
+                int columnIndexToDelete = Convert.ToInt32(config.GetSection("EANcolumnIndexToDelete").Value.ToString());
+                string valueToDelete = brandName.Trim();
+                SpreadsheetsResource.ValuesResource.GetRequest request1 =
+                service.Spreadsheets.Values.Get(spreadsheetId, range);
+                ValueRange response1 = await request1.ExecuteAsync();
+                IList<IList<Object>> values = response1.Values;
+                List<IList<object>> mergedList = new List<IList<object>>();
+                if (values != null)
+                {
+                    var value = values[0];
+                    if (value == null || value.Count == 0)
+                    {
+                        mergedList = data;
+                    }
+                    else
+                    {
+                        //if (check)
+                        //    values = values.Where(row => !row[columnIndexToDelete].ToString().ToLower().Contains(valueToDelete.ToLower())).ToList();
+                        mergedList = values.Concat(data).ToList();
+                    }
+
+                   
+
+
+                }
+                else if (values == null)
+                {
+                    mergedList = data;
+                }
+
+
+
+
+                ValueRange valueRange = new ValueRange();
+                valueRange.Values = mergedList;
+                var updateRequest = service.Spreadsheets.Values.Update(valueRange, spreadsheetId, range);
+                updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
+                var updateResponse = await updateRequest.ExecuteAsync();
+
+
+
+
                 return true;
             }
             catch (Exception r)
@@ -1743,7 +1840,7 @@ namespace TeamSports.Controllers
 
 
         [HttpPost]
-        public async Task<bool> PUSH_MAINDB(string _BRAND_NAME, string _OP)
+        public async Task<bool> PUSH_MAINDB(string _BRAND_NAME, string _BRAND_ID, string _OP)
         {
             DataTable DT_DB_DATA = _dal.GET_DB_DATA(1);
             DataTable newData = DT_DB_DATA;
@@ -1751,13 +1848,35 @@ namespace TeamSports.Controllers
             newData.Columns.Remove("BRANDID");
             bool output = await UploadDataToSheet(newData, _BRAND_NAME, _OP);
             int i = _dal.INSERT_DATA(_OP);
+
+            DataTable EAN_DATA = _dal.GET_EANDB_DATA(_BRAND_ID);
+           
+            bool ClearEAN = true;
+
+            DataTable temp_dt = EAN_DATA;
+            int fixediteration = 12000;
+            int maxcount = temp_dt.Rows.Count;
+            int skip = 0;
+            bool output2 = false;
+            while (skip < maxcount)
+            {
+
+                DataTable dt = EAN_DATA.AsEnumerable().Skip(skip).Take(fixediteration).CopyToDataTable();
+                skip += fixediteration;
+                output2 = await UploadDataToEANSheet(dt, _BRAND_NAME, _OP,ClearEAN);
+                ClearEAN = false;
+            }
+            if (output2)
+            {
+                int d = _dal.UPDATE_EAN_DATA(_BRAND_ID);
+            }
             return output;
         }
 
         [HttpPost]
-        public JsonResult DISCARD_TEMP_DB(int brandID)
+        public JsonResult DISCARD_TEMP_DB(int brandID, int type)
         {
-            int output = _dal.DISCARD_TEMP_DB(brandID);
+            int output = _dal.DISCARD_TEMP_DB(brandID, type);
             return Json(output);
         }
 
@@ -1885,6 +2004,8 @@ namespace TeamSports.Controllers
             var config = _basicUtilities.GetConfiguration();
             string Function = config.GetSection("MethodName").Value;
             string ScriptURL = config.GetSection("ScriptURL").Value;
+            string EANFunction = config.GetSection("EANMethodName").Value;
+            string EANScriptURL = config.GetSection("EANScriptURL").Value;
             try
             {
                 var client = new HttpClient();
@@ -1895,6 +2016,20 @@ namespace TeamSports.Controllers
                 var response = await client.SendAsync(request);
                 response.EnsureSuccessStatusCode();
                 Console.WriteLine(await response.Content.ReadAsStringAsync());
+
+                // remove duplicates
+                //request = new HttpRequestMessage(HttpMethod.Post, EANScriptURL);
+                //request.Headers.Add("Authorization", "Bearer " + token);
+                //content = new StringContent("{\r\n  \"function\": \"" + EANFunction + "\"\r\n}", null, "application/json");
+                //request.Content = content;
+                //response = await client.SendAsync(request);
+                //response.EnsureSuccessStatusCode();
+                //Console.WriteLine(await response.Content.ReadAsStringAsync());
+
+
+
+
+
                 return Json(true);
             }
             catch (Exception ex)

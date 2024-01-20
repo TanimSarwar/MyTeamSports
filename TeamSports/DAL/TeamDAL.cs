@@ -58,8 +58,31 @@ namespace TeamSports.DAL
                     con.Open();
                     SqlCommand cmd = new SqlCommand("GET_DB_DATA", con);
                     cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.CommandTimeout = 1000;
+                    cmd.CommandTimeout = 1500;
                     cmd.Parameters.AddWithValue("@TYPE", _TYPE);
+                    SqlDataAdapter adpt = new SqlDataAdapter(cmd);
+                    adpt.Fill(dt);
+                }
+                return dt;
+            }
+            finally
+            {
+                dt.Dispose();
+            }
+        }
+
+        public DataTable GET_EANDB_DATA(string brand_id)
+        {
+            DataTable dt = new DataTable();
+            try
+            {
+                using (SqlConnection con = new SqlConnection(BasicUtilities.GetConnectionString()))
+                {
+                    con.Open();
+                    SqlCommand cmd = new SqlCommand("GET_EANDB_DATA", con);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.CommandTimeout = 1500;
+                    cmd.Parameters.AddWithValue("@brand_id", brand_id);
                     SqlDataAdapter adpt = new SqlDataAdapter(cmd);
                     adpt.Fill(dt);
                 }
@@ -118,7 +141,7 @@ namespace TeamSports.DAL
         }
 
 
-        public int DISCARD_TEMP_DB(int BrandID)
+        public int DISCARD_TEMP_DB(int BrandID, int type)
         {
             int i = 0;
             try
@@ -130,6 +153,7 @@ namespace TeamSports.DAL
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.CommandTimeout = 500;
                     cmd.Parameters.AddWithValue("@brandid", BrandID);
+                    cmd.Parameters.AddWithValue("@type", type);
                     i = cmd.ExecuteNonQuery();
                 }
                 return i;
@@ -161,6 +185,26 @@ namespace TeamSports.DAL
                 return 0;
             }
         }
+        public int UPDATE_EAN_DATA(string brandID)
+        {
+            int i = 0;
+            try
+            {
+                using (SqlConnection con = new SqlConnection(BasicUtilities.GetConnectionString()))
+                {
+                    con.Open();
+                    SqlCommand cmd = new SqlCommand("UPDATE_EAN_DATA", con);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@brandID", brandID);
+                    i = cmd.ExecuteNonQuery();
+                }
+                return i;
+            }
+            catch (Exception ex)
+            {
+                return 0;
+            }
+        }
 
 
 
@@ -172,7 +216,7 @@ namespace TeamSports.DAL
             int i = 0;
             using (SqlConnection con = new SqlConnection(BasicUtilities.GetConnectionString()))
             {
-                string subQuery = QueryText== "EAN_DB"? BrandId != "" ? " where brand_id = " + BrandId : "" : BrandId != "" ? " where brandId = " + BrandId : "";
+                string subQuery = QueryText == "EAN_DB" ? BrandId != "WHERE STATUS=0" ? " where brand_id = " + BrandId + " AND STATUS=0" : "" : BrandId != "" ? " where brandId = " + BrandId : "";
 
                 string Query = "Delete FROM " + QueryText + " " + subQuery;
                 con.Open();

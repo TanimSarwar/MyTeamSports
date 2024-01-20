@@ -13,7 +13,7 @@
                 <span class="text-danger font-weight-bold font-size-h6" id="New_ART_ALT"></span>
             </div>
 
-             <div class="col bg-light-info px-4 py-8 rounded-xl mr-7 mb-7" onclick="Get_ALT_Data(5)" style="cursor: pointer;text-align:center">
+            <div class="col bg-light-info px-4 py-8 rounded-xl mr-7 mb-7" onclick="Get_ALT_Data(5)" style="cursor: pointer;text-align:center">
                 <span class="text-info font-weight-bold font-size-h6" id="Old_ART_ALT"></span>
             </div>
 
@@ -116,7 +116,8 @@
         <div class="row">
             <div class="col-lg-12 ml-lg-auto">
                 <button type="reset" class="btn btn-primary mr-2" onclick="PUSH_MAINDB()">Push to Main DB/Sheet</button>
-                <button type="reset" class="btn btn-danger" onclick="DISCARD()">Discard</button>
+                <button type="reset" class="btn btn-danger" onclick="DISCARD(0)">Discard ALL</button>
+
             </div>
         </div>
     </div>
@@ -129,19 +130,19 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">Modal Title</h5>
-               <a data-dismiss="modal" class="btn btn-light-danger btn-sm"><i class="flaticon-cancel"></i> Close</a>
+                <a data-dismiss="modal" class="btn btn-light-danger btn-sm"><i class="flaticon-cancel"></i> Close</a>
 
-               
 
-               
+
+
 
             </div>
             <div class="modal-body">
                 <div data-scroll="true" style="box-sizing: content-box; width: auto; padding-right: 0px;">
 
-                   <table id="alt_tbl" class="table table-bordered dataTable" cellspacing="0">
-            <thead>
-                <tr>
+                    <table id="alt_tbl" class="table table-bordered dataTable" cellspacing="0">
+                        <thead>
+                            <tr>
                                 <th style="text-align:center;">#</th>
                                 <th style="text-align:center;">Brand</th>
                                 <th style="text-align:center;">Product ID</th>
@@ -151,9 +152,9 @@
                                 <th style="text-align:center;">Price</th>
                                 <th style="text-align:center;">Delete</th>
                             </tr>
-            </thead>
-            <tbody id="alt_tbl_bdy"></tbody>
-        </table>
+                        </thead>
+                        <tbody id="alt_tbl_bdy"></tbody>
+                    </table>
                     <div>
                     </div>
                     <div class="modal-footer">
@@ -166,9 +167,9 @@
 </div>
 
 <script src="assets/plugins/global/plugins.bundle.js"></script>
-   <script src="assets/js/scripts.bundle.js"></script>
-   <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
-   <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="assets/js/scripts.bundle.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 
 <script src="assets/js/pages/crud/forms/widgets/select2.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -248,10 +249,10 @@
                     setTimeout(() => { Get_DB_Data(); }, 100)
 
 
-                }else{
-                   
+                } else {
+
                     Swal.fire(
-                        'Error!',
+                        'error',
                         'File doesn\'t have required columns.Perhaps Column name(s) are changed.Please check it.',
                         'error'
                     )
@@ -266,7 +267,7 @@
                 swal.close();
 
                 Swal.fire(
-                    'Error!',
+                    'error',
                     'Please Try Again.',
                     'error'
                 )
@@ -274,18 +275,25 @@
         });
     });
 
-    function DISCARD() {
+    function DISCARD(type) {
         var _brandID = $("#brand_name :selected").val();
+        var _brandTXT = $("#brand_name :selected").text();
+
+        var title = type == 1 ? "Do you want to discard the articles of " + _brandTXT + "?" :
+
+            type == 0 ? "Do you want to discard the EAN DB and articles of? " + _brandTXT + "?" : "Do you want to discard the EAN DB of? " + _brandTXT + "?";
+
+
 
         Swal.fire({
-            title: "Do you want to discard the articles?",
+            title: title,
             icon: "question",
             showDenyButton: true,
             showCancelButton: true,
             confirmButtonText: "Yes",
             denyButtonText: `No`,
-                allowEscapeKey: false,
-                allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowOutsideClick: false,
         }).then((result) => {
             /* Read more about isConfirmed, isDenied below */
             if (result.isConfirmed) {
@@ -295,15 +303,18 @@
                     type: "POST",
                     dataType: "json",
                     data: {
-                        brandID: _brandID
+                        brandID: _brandID,
+                        type: type
                     },
                     success: function (response) {
                         {
                             swal.close();
                             Swal.fire(
-                                'Successful!',
-                                'File Upload Discarded!!',
-                                'success'
+
+
+                                'success',
+                                'File Upload Discarded',
+                                'Successful!'
                             )
 
                             setTimeout(function () {
@@ -369,6 +380,13 @@
                         $("#ART_WISE_DT_BODY").empty();
                         $('#ART_WISE_DT_HEAD').append(resultHead);
                         $('#ART_WISE_DT_BODY').append(resultBody);
+                        var brandid = response?.body[0]["BRANDID"];
+                      //  alert(brandid)
+
+                        $("#brandName").val(brandid).trigger("change");
+
+
+
                         swal.close();
 
                         new DataTable('#examples', {
@@ -400,17 +418,17 @@
                     console.log("GET_ALT_DATA", response);
                     {
                         if (type == 0) {
-                            if (response[0].QTY > 0 || response[1].QTY > 0 || response[2].QTY > 0 || response[3].QTY > 0 ||response[4].QTY > 0) {
+                            if (response[0].QTY > 0 || response[1].QTY > 0 || response[2].QTY > 0 || response[3].QTY > 0 || response[4].QTY > 0) {
                                 $("#summary").show();
                                 $("#color_ALT").html("");
                                 $("#size_ALT").html("");
                                 $("#price_ALT").html("");
                                 $("#New_ART_ALT").html("");
-                                $("#New_ART_ALT").html("<a class='btn btn-xs btn-icon btn-light-danger mr-2'><i class='far fa-plus-square'></i></a>New: " +response[3].QTY);
-                                $("#Old_ART_ALT").html("<a class='btn btn-xs btn-icon btn-light-info mr-2'><i class='fas fa-trash-alt'></i></a>Removed: " +response[4].QTY);//response 4 hbe 
-                                $("#color_ALT").html("<a class='btn btn-xs btn-icon btn-light-success mr-2'><i class='fas fa-highlighter'></i></a>Color Alter: "+response[2].QTY);
-                                $("#size_ALT").html("<a class='btn btn-xs btn-icon btn-light-primary mr-2'><i class='fas fa-tape'></i></a>Size Alter: "+response[1].QTY);
-                                $("#price_ALT").html("<a class='btn btn-xs btn-icon btn-light-warning mr-2'><i class='far fa-money-bill-alt'></i></a>Price Alter: "+response[0].QTY);
+                                $("#New_ART_ALT").html("<a class='btn btn-xs btn-icon btn-light-danger mr-2'><i class='far fa-plus-square'></i></a>New: " + response[3].QTY);
+                                $("#Old_ART_ALT").html("<a class='btn btn-xs btn-icon btn-light-info mr-2'><i class='fas fa-trash-alt'></i></a>Removed: " + response[4].QTY);//response 4 hbe
+                                $("#color_ALT").html("<a class='btn btn-xs btn-icon btn-light-success mr-2'><i class='fas fa-highlighter'></i></a>Color Alter: " + response[2].QTY);
+                                $("#size_ALT").html("<a class='btn btn-xs btn-icon btn-light-primary mr-2'><i class='fas fa-tape'></i></a>Size Alter: " + response[1].QTY);
+                                $("#price_ALT").html("<a class='btn btn-xs btn-icon btn-light-warning mr-2'><i class='far fa-money-bill-alt'></i></a>Price Alter: " + response[0].QTY);
                             }
                         }
 
@@ -418,19 +436,19 @@
                         else {
 
                             const typeMessages = {
-                                            1: "List of Articles with altered PRICE",
-                                            2: "List of Articles with altered SIZE",
-                                            3: "List of Articles with altered COLOR",
-                                            4: "List of New (Non Existing) Articles",
-                                            5: "List of Articles that will be deleted"
-                                        };
+                                1: "List of Articles with altered PRICE",
+                                2: "List of Articles with altered SIZE",
+                                3: "List of Articles with altered COLOR",
+                                4: "List of New (Non Existing) Articles",
+                                5: "List of Articles that will be deleted"
+                            };
 
                             const message = typeMessages[type];
                             $("#exampleModalLabel").html(message);
 
-                              $("#alt_tbl_bdy").empty();
-                     new DataTable('#alt_tbl').clear();
-                     new DataTable('#alt_tbl').destroy();
+                            $("#alt_tbl_bdy").empty();
+                            new DataTable('#alt_tbl').clear();
+                            new DataTable('#alt_tbl').destroy();
                             var resultBody = "";
 
 
@@ -464,12 +482,12 @@
                                 else {
                                     resultBody += "<td style='text-align:center;'><s><span style='color:red;font-weight:bold'>" + response[i].OLD_PRICE + "</span></s> <span style='color:green;font-weight:bold'>" + response[i].NEW_PRICE + "</span></td>";
                                 }
-                                resultBody += "<td style='text-align:center;'><a class='btn btn-icon btn-light-danger btn-sm mr-2' onclick=DELETE_ALT_ARTICLE("+type+"," + response[i].BRANDID + ",'" + encodeURIComponent(response[i].SEPERATING_PROD_ID) + "','" + encodeURIComponent(response[i].NEW_SIZE) + "')><i class='flaticon-delete'></i></a></td>";
+                                resultBody += "<td style='text-align:center;'><a class='btn btn-icon btn-light-danger btn-sm mr-2' onclick=DELETE_ALT_ARTICLE(" + type + "," + response[i].BRANDID + ",'" + encodeURIComponent(response[i].SEPERATING_PROD_ID) + "','" + encodeURIComponent(response[i].NEW_SIZE) + "')><i class='flaticon-delete'></i></a></td>";
                             }
 
                             resultBody += "</tr>";
 
-                            
+
 
 
                             $('#alt_tbl_bdy').append(resultBody);
@@ -477,8 +495,8 @@
                             new DataTable('#alt_tbl');
 
 
-                                                        $("#ALT_MODAL").modal("show")
-                             $("#ALT_MODAL").focus();
+                            $("#ALT_MODAL").modal("show")
+                            $("#ALT_MODAL").focus();
 
 
 
@@ -496,7 +514,7 @@
     }
 
     function DELETE_ALT_ARTICLE(type, _BRAND, _PROD_ID, _SIZE) {
-        alert('OK');
+        // alert('OK');
         $.ajax({
             url: "/Home/DELETE_ALT_ARTICLE",
             type: "POST",
@@ -510,12 +528,12 @@
                 {
                     if (response != 0) {
                         Swal.fire(
-                            'Successful!',
+                            'success',
                             'Article Has Been Deleted',
-                            'success'
+                            'Successful!'
                         )
-                       Get_ALT_Data(0);
-                       Get_ALT_Data(type);
+                        Get_ALT_Data(0);
+                        Get_ALT_Data(type);
                     }
 
 
@@ -532,7 +550,8 @@
 
     function PUSH_MAINDB() {
 
-        var _brandName = $("#brandName").html();
+
+        var _brandName = $("#brand_name :selected").text();
         Swal.fire({
             title: "Do you want delete existing " + _brandName + " data and replace current data?",
             icon: "question",
@@ -564,19 +583,21 @@
     }
 
     function PushData(_BRAND_NAME, _OP) {
-        swal.showLoading();
+        setTimeout(() => { swal.showLoading(); }, 1000)
+        var _brandID = $("#brand_name :selected").val();
         $.ajax({
             url: "/Home/PUSH_MAINDB",
             type: "POST",
             dataType: "json",
             data: {
+                _BRAND_ID: _brandID,
                 _BRAND_NAME: _BRAND_NAME,
                 _OP: _OP
             },
             success: function (response) {
                 {
                     Swal.fire(
-                        'Successful!',
+                        'success',
                         'Article Has Been Added To The Sheet & DB',
                         'success'
                     )
@@ -591,7 +612,7 @@
 
                         /* Read more about isConfirmed, isDenied below */
                         if (result.isConfirmed) {
-                              swal.showLoading();
+                            swal.showLoading();
                             window.location.href = "/Authorize";
                         }
                         else {

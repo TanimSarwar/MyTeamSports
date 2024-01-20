@@ -142,7 +142,8 @@
         <div class="row">
             <div class="col-lg-12 ml-lg-auto">
                 <button type="reset" class="btn btn-primary mr-2" onclick="PUSH_MAINDB()">Push to Main DB/Sheet</button>
-                <button type="reset" class="btn btn-danger" onclick="DISCARD()">Discard</button>
+                <button type="reset" class="btn btn-danger" onclick="DISCARD(0)">Discard</button>
+
             </div>
         </div>
     </div>
@@ -268,13 +269,22 @@
                 swal.close();
                 console.log("Reposnse After Processing file", response);
                 if (response) {
-
-                    Get_DB_Data();
+                    Swal.fire(
+                        'success',
+                        'Excel file has been sumbitted successfully. Please wait while we pull your data',
+                        'Successful!'
+                    )
+                    setTimeout(() => { Get_DB_Data(); }, 100)
 
 
                 }
                 else {
-                    alert("File doesn't have required columns. Perhaps Column name(s) are changed. Please check it.");
+
+                    Swal.fire(
+                        'error',
+                        'File doesn\'t have required columns.Perhaps Column name(s) are changed.Please check it.',
+                        'error'
+                    )
                 }
                 //var startdt1 = new Date();
                 //swal.fire(response + "    :" + startdt + "    :" + startdt1);
@@ -282,21 +292,33 @@
 
             },
             error: function (response) {
-                swal.close(); alert("Try Again.");
+                swal.close(); Swal.fire(
+                    'error',
+                    'Please Try Again.',
+                    'error'
+                )
             }
         });
     });
 
-    function DISCARD() {
-          var _brandID = $("#brand_name :selected").val();
+    function DISCARD(type) {
+        var _brandID = $("#brand_name :selected").val();
+        var _brandTXT = $("#brand_name :selected").text();
+
+        var title = type == 1 ? "Do you want to discard the articles of " + _brandTXT + "?" :
+
+            type == 0 ? "Do you want to discard the EAN DB and articles of? " + _brandTXT + "?" : "Do you want to discard the EAN DB of? " + _brandTXT + "?";
+
 
         Swal.fire({
-            title: "Do you want to discard the articles?",
+            title: title,
             icon: "question",
             showDenyButton: true,
             showCancelButton: true,
             confirmButtonText: "Yes",
-            denyButtonText: `No`
+            denyButtonText: `No`,
+            allowEscapeKey: false,
+            allowOutsideClick: false,
         }).then((result) => {
             /* Read more about isConfirmed, isDenied below */
             if (result.isConfirmed) {
@@ -306,13 +328,14 @@
                     type: "POST",
                     dataType: "json",
                     data: {
-                        brandID: _brandID
+                        brandID: _brandID,
+                        type: type
                     },
                     success: function (response) {
                         {
                             swal.close();
                             Swal.fire(
-                                'Successful!',
+                                'success',
                                 'File Upload Discarded!!',
                                 'success'
                             )
@@ -350,7 +373,7 @@
                     swal.close();
                     console.log("Generating Data: ", response);
                     if (response?.status && response?.body?.length > 0) {
-                        $("#brandName").html(response?.body[0]["BRAND"]);
+                      
                         $("#PUSHTODB").show();
                         $("#form").hide();
                         var resultBody = "";
@@ -380,6 +403,11 @@
                         $("#ART_WISE_DT_BODY").empty();
                         $('#ART_WISE_DT_HEAD').append(resultHead);
                         $('#ART_WISE_DT_BODY').append(resultBody);
+                        var brandid = response?.body[0]["BRANDID"];
+                        //alert(brandid)
+                       
+                        $("#brandName").val(brandid).trigger("change");
+
                         swal.close();
                         new DataTable('#examples', {
                             scrollX: true
@@ -521,9 +549,9 @@
                 {
                     if (response != 0) {
                         Swal.fire(
-                            'Successful!',
+                            'success',
                             'Article Has Been Deleted',
-                            'success'
+                            'Successful!'
                         )
                        Get_ALT_Data(0);
                        Get_ALT_Data(type);
@@ -543,7 +571,7 @@
 
     function PUSH_MAINDB() {
 
-        var _brandName = $("#brandName").html();
+        var _brandName = $("#brand_name :selected").text();
         Swal.fire({
             title: "Do you want delete existing " + _brandName + " data and replace current data?",
             icon: "question",
@@ -576,18 +604,20 @@
 
     function PushData(_BRAND_NAME, _OP) {
         swal.showLoading();
+        var _brandID = $("#brand_name :selected").val();
         $.ajax({
             url: "/Home/PUSH_MAINDB",
             type: "POST",
             dataType: "json",
             data: {
+                _BRAND_ID: _brandID,
                 _BRAND_NAME: _BRAND_NAME,
                 _OP: _OP
             },
             success: function (response) {
                 {
                     Swal.fire(
-                        'Successful!',
+                        'Success',
                         'Article Has Been Added To The Sheet & DB',
                         'success'
                     )
