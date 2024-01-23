@@ -534,11 +534,12 @@ namespace TeamSports.Controllers
                     string inputString = item.PROD_NAME.ToString().Trim().ToLower();
                     string stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
                     string result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
+                    result = replaceGermanUmlauts(result);
                     newRow["PROD_FILE_NAME"] = result;
 
                     inputString = item.COLORNAME.ToString().Trim().ToLower();
                     stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
-                    result = Regex.Replace(stringWithHyphens, @"[^\w\d;-]", "");
+                    result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
 
                     newRow["COLOR_NAMES"] = ";" + result;
                     resultTable.Rows.Add(newRow);
@@ -776,6 +777,7 @@ namespace TeamSports.Controllers
                     string inputString = item.PROD_NAME.ToString().Trim().ToLower();
                     string stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
                     string result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
+                    result = replaceGermanUmlauts(result);
                     newRow["PROD_FILE_NAME"] = result;
 
                     inputString = item.COLORNAME.ToString().Trim().ToLower();
@@ -1008,6 +1010,7 @@ namespace TeamSports.Controllers
                     string inputString = item.PROD_NAME.ToString().Trim().ToLower();
                     string stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
                     string result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
+                    result = replaceGermanUmlauts(result);
                     newRow["PROD_FILE_NAME"] = result;
 
                     inputString = item.COLORNAME.ToString().Trim().ToLower();
@@ -1345,11 +1348,12 @@ namespace TeamSports.Controllers
                     string inputString = item.PROD_NAME.ToString().Trim().ToLower();
                     string stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
                     string result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
+                    result = replaceGermanUmlauts(result);
                     newRow["PROD_FILE_NAME"] = result;
 
                     inputString = item.COLORNAME.ToString().Trim().ToLower();
                     stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
-                    result = Regex.Replace(stringWithHyphens, @"[^\w\s\p{L};]", "");
+                    result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
 
                     newRow["COLOR_NAMES"] = ";" + result;
                     resultTable.Rows.Add(newRow);
@@ -1569,6 +1573,7 @@ namespace TeamSports.Controllers
                     string inputString = item.PROD_NAME.ToString().Trim().ToLower();
                     string stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
                     string result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
+                    result = replaceGermanUmlauts(result);
                     newRow["PROD_FILE_NAME"] = result;
 
                     inputString = item.COLORNAME.ToString().Trim().ToLower();
@@ -1589,6 +1594,22 @@ namespace TeamSports.Controllers
             return dataTable;
 
         }
+
+        private string replaceGermanUmlauts(string s)
+        {
+            string t = s;
+            t = t.Replace("ä", "ae");
+            t = t.Replace("ö", "oe");
+            t = t.Replace("ü", "ue");
+            t = t.Replace("ß", "ss");
+            t = t.Replace("Ä", "ae");
+            t = t.Replace("Ö", "oe");
+            t = t.Replace("Ü", "ue");
+            t = t.Replace("ß", "ss");
+            return t;
+        }
+
+
         public async Task<bool> UploadDataToSheet(DataTable dt, string brandName, string _OP)
         {
             try
@@ -1693,7 +1714,7 @@ namespace TeamSports.Controllers
                         mergedList = values.Concat(data).ToList();
                     }
 
-                   
+
 
 
                 }
@@ -1726,7 +1747,13 @@ namespace TeamSports.Controllers
 
         private string GenderMapping(string gender)
         {
-            var mappingList = new List<(string, string)>
+            if (gender == "")
+            {
+                gender = "Unisex";
+            }
+            else
+            {
+                var mappingList = new List<(string, string)>
         {
             ("Unisex","Unisex"),
             ("erwachsene","Unisex"),
@@ -1754,18 +1781,19 @@ namespace TeamSports.Controllers
             ("Male Infant","Kinder"),
             ("Female Pre-School","Kinder")
         };
-            var mappingDictionary = new Dictionary<string, string>();
-            foreach (var mapping in mappingList)
-            {
-                mappingDictionary[mapping.Item1.Trim().ToLower()] = mapping.Item2.Trim().ToLower();
-            }
-            if (mappingDictionary.ContainsKey(gender.Trim().ToLower()))
-            {
-                gender = mappingDictionary[gender.Trim().ToLower()];
-            }
+                var mappingDictionary = new Dictionary<string, string>();
+                foreach (var mapping in mappingList)
+                {
+                    mappingDictionary[mapping.Item1.Trim().ToLower()] = mapping.Item2.Trim().ToLower();
+                }
+                if (mappingDictionary.ContainsKey(gender.Trim().ToLower()))
+                {
+                    gender = mappingDictionary[gender.Trim().ToLower()];
+                }
 
-            TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
-            gender = textInfo.ToTitleCase(gender);
+                TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
+                gender = textInfo.ToTitleCase(gender);
+            }
 
             return gender;
 
@@ -1850,7 +1878,7 @@ namespace TeamSports.Controllers
             int i = _dal.INSERT_DATA(_OP);
 
             DataTable EAN_DATA = _dal.GET_EANDB_DATA(_BRAND_ID);
-           
+
             bool ClearEAN = true;
 
             DataTable temp_dt = EAN_DATA;
@@ -1863,7 +1891,7 @@ namespace TeamSports.Controllers
 
                 DataTable dt = EAN_DATA.AsEnumerable().Skip(skip).Take(fixediteration).CopyToDataTable();
                 skip += fixediteration;
-                output2 = await UploadDataToEANSheet(dt, _BRAND_NAME, _OP,ClearEAN);
+                output2 = await UploadDataToEANSheet(dt, _BRAND_NAME, _OP, ClearEAN);
                 ClearEAN = false;
             }
             if (output2)
