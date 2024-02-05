@@ -388,10 +388,10 @@ namespace TeamSports.Controllers
 
 
                 var groupedData = from row in dataTable.AsEnumerable()
-                                  group row by new { PROD_NAME = row["Name"], PROD_NUMBER = row["ProductNumber"], BASE_PRICE = row["Price"], GENDER = row["Gender"], DESCRIPTION = row["Desccription"] } into grp
+                                  group row by new { PROD_NUMBER = row["ProductNumber"], BASE_PRICE = row["Price"], GENDER = GenderMapping(row["Gender"].ToString()), DESCRIPTION = row["Desccription"] } into grp
                                   select new
                                   {
-                                      PROD_NAME = grp.Key.PROD_NAME,
+                                      PROD_NAME = string.Join("#", grp.Select(r => r["Name"]).Distinct()),
                                       PROD_NUMBER = grp.Key.PROD_NUMBER,
                                       GENDER = grp.Key.GENDER,
                                       DESCRIPTION = grp.Key.DESCRIPTION,
@@ -401,6 +401,9 @@ namespace TeamSports.Controllers
                                       COLORNAME = string.Join(";", grp.Select(r => r["Color"]).Distinct()),
                                       Images = string.Join(";", grp.Select(r => r["Images"]).Distinct())
                                   };
+
+
+
 
                 string TableName = "EAN_DB";
 
@@ -420,14 +423,27 @@ namespace TeamSports.Controllers
                 EAN_DB_DATA.Columns.Add("COLOR_CODE");
                 EAN_DB_DATA.Columns.Add("COLOR_NAME");
                 EAN_DB_DATA.Columns.Add("IMAGE_URL"); EAN_DB_DATA.Columns.Add("STATUS");
+                string ProdName = string.Empty;
+                string Prodnumber = string.Empty;
 
-                foreach (DataRow row in dt.Rows)
+                foreach (DataRow row in dataTable.Rows)
                 {
+                    string PROD_NUMBER = vBrandName.ToLower() == "nike" && row["ProductNumber"].ToString().Trim().Contains('-') ? row["ProductNumber"].ToString().Trim().Split('-')[0] : row["ProductNumber"].ToString().Trim();
+
+                    if (row["Price"].ToString().Trim() == "" || row["Price"].ToString().Trim() == "0") continue;
+                    if (Prodnumber != PROD_NUMBER)
+                    {
+                        ProdName = row["Name"].ToString();
+                        Prodnumber = PROD_NUMBER;
+                    }
+
+
+
                     var newRow = EAN_DB_DATA.NewRow();
                     newRow["BRAND_ID"] = vBrandID;
                     newRow["BRAND_NAME"] = vBrandName;
-                    newRow["PRODUCT_NAME"] = row["Name"];
-                    string PROD_NUMBER = vBrandName.ToLower() == "nike" && row["ProductNumber"].ToString().Trim().Contains('-') ? row["ProductNumber"].ToString().Trim().Split('-')[0] : row["ProductNumber"].ToString().Trim();
+                    newRow["PRODUCT_NAME"] = ProdName;
+
                     string ColorCode = vBrandName.ToLower() == "nike" && row["ProductNumber"].ToString().Trim().Contains('-') ? row["ProductNumber"].ToString().Trim().Split('-')[1] : "0";
                     newRow["PRODUCT_NUMBER"] = PROD_NUMBER;
                     newRow["PRODUCT_GENDER"] = GenderMapping(row["Gender"].ToString());
@@ -474,6 +490,7 @@ namespace TeamSports.Controllers
 
                 foreach (var item in groupedData)
                 {
+                    if (item.BASE_PRICE.ToString().Trim() == "0" || item.BASE_PRICE.ToString().Trim() == "") continue;
 
                     DataRow newRow = resultTable.NewRow();
 
@@ -481,7 +498,7 @@ namespace TeamSports.Controllers
                     newRow["EAN"] = item.EAN.ToString().Trim();
                     newRow["BRAND"] = vBrandName;
                     newRow["LINE"] = "".ToString().Trim();
-                    newRow["PROD_NAME"] = item.PROD_NAME.ToString().Trim().ToString().Trim();
+                    newRow["PROD_NAME"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
 
                     string PROD_NUMBER = vBrandName.ToLower() == "nike" && item.PROD_NUMBER.ToString().Trim().Contains('-') ? item.PROD_NUMBER.ToString().Trim().Split('-')[0] : item.PROD_NUMBER.ToString().Trim();
 
@@ -492,7 +509,7 @@ namespace TeamSports.Controllers
                     string gender = GenderMapping(item.GENDER.ToString());
                     newRow["SEPERATING_PROD_ID"] = gender.Trim().Length > 0 ? item.PROD_NUMBER.ToString().Trim() + " - " + gender.Trim() : item.PROD_NUMBER.ToString().Trim();
 
-                    newRow["TITLE"] = item.PROD_NAME.ToString().Trim();
+                    newRow["TITLE"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
                     newRow["PROD_GENDER"] = gender.Trim();
                     newRow["PROD_DESCRIPTION"] = Regex.Replace(item.DESCRIPTION.ToString().Trim(), expression, " ").Trim();
@@ -619,10 +636,10 @@ namespace TeamSports.Controllers
                 dataTable = SortDataTable(dt, "StyleNo", "Größe", "lookupColorName");
 
                 var groupedData = from row in dataTable.AsEnumerable()
-                                  group row by new { PROD_NAME = row["StyleName"], PROD_NUMBER = row["StyleNo"], BASE_PRICE = row["LISTPRICEDEEUR"], GENDER = row["Geschlecht(DE)"], DESCRIPTION = row["SalesDescription(DE)"] } into grp
+                                  group row by new { PROD_NUMBER = row["StyleNo"], BASE_PRICE = row["LISTPRICEDEEUR"], GENDER = GenderMapping(row["Geschlecht(DE)"].ToString()), DESCRIPTION = row["ProductText(DE)"] } into grp
                                   select new
                                   {
-                                      PROD_NAME = grp.Key.PROD_NAME,
+                                      PROD_NAME = string.Join("#", grp.Select(r => r["StyleName"]).Distinct()),
                                       PROD_NUMBER = grp.Key.PROD_NUMBER,
                                       GENDER = grp.Key.GENDER,
                                       DESCRIPTION = grp.Key.DESCRIPTION,
@@ -659,13 +676,22 @@ namespace TeamSports.Controllers
                 EAN_DB_DATA.Columns.Add("COLOR_CODE");
                 EAN_DB_DATA.Columns.Add("COLOR_NAME");
                 EAN_DB_DATA.Columns.Add("IMAGE_URL"); EAN_DB_DATA.Columns.Add("STATUS");
+                string ProdName = string.Empty;
+                string Prodnumber = string.Empty;
 
-                foreach (DataRow row in dt.Rows)
+                foreach (DataRow row in dataTable.Rows)
                 {
+                    if (row["LISTPRICEDEEUR"].ToString().Trim() == "" || row["LISTPRICEDEEUR"].ToString().Trim() == "0") continue;
+                    if (Prodnumber != row["StyleNo"].ToString())
+                    {
+                        ProdName = row["StyleName"].ToString();
+                        Prodnumber = row["StyleNo"].ToString();
+                    }
+
                     var newRow = EAN_DB_DATA.NewRow();
                     newRow["BRAND_ID"] = vBrandID;
                     newRow["BRAND_NAME"] = vBrandName;
-                    newRow["PRODUCT_NAME"] = row["StyleName"];
+                    newRow["PRODUCT_NAME"] = ProdName;
                     newRow["PRODUCT_NUMBER"] = row["StyleNo"];
                     newRow["PRODUCT_GENDER"] = GenderMapping(row["Geschlecht(DE)"].ToString());
                     newRow["PRICE_UVP"] = row["LISTPRICEDEEUR"].ToString().Trim()?.Replace('.', ',');
@@ -711,17 +737,17 @@ namespace TeamSports.Controllers
 
                 foreach (var item in groupedData)
                 {
-
+                    if (item.BASE_PRICE.ToString().Trim() == "" || item.BASE_PRICE.ToString().Trim() == "0") continue;
                     DataRow newRow = resultTable.NewRow();
 
                     newRow["BRANDID"] = vBrandID;
                     newRow["EAN"] = item.EAN.ToString().Trim();
                     newRow["BRAND"] = vBrandName;
                     newRow["LINE"] = "".ToString().Trim();
-                    newRow["PROD_NAME"] = item.PROD_NAME.ToString().Trim().ToString().Trim();
+                    newRow["PROD_NAME"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
                     newRow["PROD_NUMBER"] = item.PROD_NUMBER.ToString().Trim();
                     newRow["UNIFYING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim();
-
+                    newRow["TITLE"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
                     string gender = GenderMapping(item.GENDER.ToString());
                     newRow["SEPERATING_PROD_ID"] = gender.Trim().Length > 0 ? item.PROD_NUMBER.ToString().Trim() + " - " + gender.Trim() : item.PROD_NUMBER.ToString().Trim();
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
@@ -862,10 +888,10 @@ namespace TeamSports.Controllers
                 dataTable = SortDataTable(dt, "Artikelnummer", "Groesse", "FarbeDE");
 
                 var groupedData = from row in dataTable.AsEnumerable()
-                                  group row by new { PROD_NAME = row["ArtikelnameDE"], PROD_NUMBER = row["Artikelnummer"], LINE = row["Linie"], TYPE = row["ProduktartDE"], BASE_PRICE = row["DEEmpfVKEUR"], GENDER = row["ZielgruppeDE"], DESCRIPTION = row["MarketingtextundUSPsDE"] } into grp
+                                  group row by new { PROD_NUMBER = row["Artikelnummer"], LINE = row["Linie"], TYPE = row["ProduktartDE"], BASE_PRICE = row["DEEmpfVKEUR"], GENDER = GenderMapping(row["ZielgruppeDE"].ToString()), DESCRIPTION = row["MarketingtextundUSPsDE"] } into grp
                                   select new
                                   {
-                                      PROD_NAME = grp.Key.PROD_NAME,
+                                      PROD_NAME = string.Join("#", grp.Select(r => r["ArtikelnameDE"]).Distinct()),
                                       PROD_NUMBER = grp.Key.PROD_NUMBER,
                                       TYPE = grp.Key.TYPE,
                                       LINE = grp.Key.LINE,
@@ -899,13 +925,26 @@ namespace TeamSports.Controllers
                 EAN_DB_DATA.Columns.Add("COLOR_NAME");
                 EAN_DB_DATA.Columns.Add("IMAGE_URL"); EAN_DB_DATA.Columns.Add("STATUS");
 
-                foreach (DataRow row in dt.Rows)
+                string ProdName = string.Empty;
+                string Prodnumber = string.Empty;
+
+                foreach (DataRow row in dataTable.Rows)
                 {
+                    if (row["DEEmpfVKEUR"].ToString().Trim() == "" || row["DEEmpfVKEUR"].ToString().Trim() == "0") continue;
+
+                    if (Prodnumber != row["Artikelnummer"].ToString())
+                    {
+                        ProdName = row["ArtikelnameDE"].ToString();
+                        Prodnumber = row["Artikelnummer"].ToString();
+                    }
+
+
+
                     var newRow = EAN_DB_DATA.NewRow();
                     newRow["BRAND_ID"] = vBrandID;
                     newRow["BRAND_NAME"] = vBrandName;
-                    newRow["PRODUCT_NAME"] = row["ArtikelnameDE"];
-                    newRow["PRODUCT_NUMBER"] = row["Artikelnummer"];
+                    newRow["PRODUCT_NAME"] = ProdName;
+                    newRow["PRODUCT_NUMBER"] = "E" + row["Artikelnummer"];
                     newRow["PRODUCT_GENDER"] = GenderMapping(row["ZielgruppeDE"].ToString());
                     newRow["PRICE_UVP"] = row["DEEmpfVKEUR"].ToString().Trim()?.Replace('.', ',');
                     newRow["EAN"] = row["EANCode"];
@@ -955,6 +994,7 @@ namespace TeamSports.Controllers
 
                 foreach (var item in groupedData)
                 {
+                    if (item.BASE_PRICE.ToString().Trim() == "0" || item.BASE_PRICE.ToString().Trim() == "") continue;
 
                     DataRow newRow = resultTable.NewRow();
 
@@ -962,13 +1002,13 @@ namespace TeamSports.Controllers
                     newRow["EAN"] = item.EAN.ToString().Trim();
                     newRow["BRAND"] = vBrandName;
                     newRow["LINE"] = item.LINE.ToString().Trim();
-                    newRow["PROD_NAME"] = item.PROD_NAME.ToString().Trim().ToString().Trim();
-                    newRow["PROD_NUMBER"] = item.PROD_NUMBER.ToString().Trim();
-                    newRow["UNIFYING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim();
+                    newRow["PROD_NAME"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
+                    newRow["PROD_NUMBER"] = "E" + item.PROD_NUMBER.ToString().Trim();
+                    newRow["UNIFYING_PROD_ID"] = "E" + item.PROD_NUMBER.ToString().Trim();
 
                     string gender = GenderMapping(item.GENDER.ToString());
-                    newRow["SEPERATING_PROD_ID"] = gender.Trim().Length > 0 ? item.PROD_NUMBER.ToString().Trim() + " - " + gender.Trim() : item.PROD_NUMBER.ToString().Trim();
-                    newRow["TITLE"] = item.PROD_NAME.ToString().Trim();
+                    newRow["SEPERATING_PROD_ID"] = gender.Trim().Length > 0 ? "E" + item.PROD_NUMBER.ToString().Trim() + " - " + gender.Trim() : "E" + item.PROD_NUMBER.ToString().Trim();
+                    newRow["TITLE"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
                     newRow["PRODUCT_TYPE"] = item.TYPE.ToString().Trim();
                     newRow["PROD_GENDER"] = gender.Trim();
                     newRow["PROD_DESCRIPTION"] = item.DESCRIPTION.ToString().Trim();
@@ -1210,12 +1250,23 @@ namespace TeamSports.Controllers
                 EAN_DB_DATA.Columns.Add("COLOR_NAME");
                 EAN_DB_DATA.Columns.Add("IMAGE_URL"); EAN_DB_DATA.Columns.Add("STATUS");
 
-                foreach (DataRow row in dt.Rows)
+                string ProdName = string.Empty;
+                string Prodnumber = string.Empty;
+
+                foreach (DataRow row in dataTable.Rows)
                 {
+                    if (row["UVP"].ToString().Trim() == "" || row["UVP"].ToString().Trim() == "0") continue;
+                    if (Prodnumber != row["ItemNo"].ToString())
+                    {
+                        ProdName = row["Description"].ToString();
+                        Prodnumber = row["ItemNo"].ToString();
+                    }
+
+
                     var newRow = EAN_DB_DATA.NewRow();
                     newRow["BRAND_ID"] = vBrandID;
                     newRow["BRAND_NAME"] = vBrandName;
-                    newRow["PRODUCT_NAME"] = row["Description"];
+                    newRow["PRODUCT_NAME"] = ProdName;
                     newRow["PRODUCT_NUMBER"] = row["ItemNo"];
                     newRow["PRODUCT_GENDER"] = GenderMapping(row["GENDER"].ToString());
                     newRow["PRICE_UVP"] = row["UVP"].ToString().Trim()?.Replace('.', ',');
@@ -1275,12 +1326,11 @@ namespace TeamSports.Controllers
 
 
                 var groupedData = from row in dataTable.AsEnumerable()
-                                  group row by new { PROD_NAME = row["Description"], PROD_NUMBER = row["ItemNo"], TITLE = row["Description"], BASE_PRICE = row["UVP"], GENDER = row["GENDER"], N = row["recommendedUVP"], M = row["PriceIndividual"], O = row["Text1"], P = row["Text2"], Q = row["Text3"], R = row["Text4"], S = row["Text5"] } into grp
+                                  group row by new { PROD_NUMBER = row["ItemNo"], BASE_PRICE = row["UVP"], GENDER = GenderMapping(row["GENDER"].ToString()), N = row["recommendedUVP"], M = row["PriceIndividual"], O = row["Text1"], P = row["Text2"], Q = row["Text3"], R = row["Text4"], S = row["Text5"] } into grp
                                   select new
                                   {
-                                      PROD_NAME = grp.Key.PROD_NAME,
+                                      PROD_NAME = string.Join("#", grp.Select(r => r["Description"]).Distinct()),
                                       PROD_NUMBER = grp.Key.PROD_NUMBER,
-                                      TITLE = grp.Key.TITLE,
                                       GENDER = grp.Key.GENDER,
                                       DESCRIPTION = grp.Key.N + " " + grp.Key.M + " " + grp.Key.O + " " + grp.Key.P + " " + grp.Key.Q + " " + grp.Key.R + " " + grp.Key.S,
                                       BASE_PRICE = grp.Key.BASE_PRICE,
@@ -1295,18 +1345,19 @@ namespace TeamSports.Controllers
 
                 foreach (var item in groupedData)
                 {
+                    if (item.BASE_PRICE.ToString().Trim() == "0" || item.BASE_PRICE.ToString().Trim() == "") continue;
 
                     DataRow newRow = resultTable.NewRow();
                     newRow["BRANDID"] = vBrandID;
                     newRow["EAN"] = item.EAN.ToString().Trim();
                     newRow["BRAND"] = vBrandName;
                     newRow["LINE"] = "";
-                    newRow["PROD_NAME"] = item.PROD_NAME.ToString().Trim().ToString().Trim();
+                    newRow["PROD_NAME"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
                     newRow["PROD_NUMBER"] = item.PROD_NUMBER.ToString().Trim();
                     newRow["UNIFYING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim();
                     string gender = GenderMapping(item.GENDER.ToString());
                     newRow["SEPERATING_PROD_ID"] = gender.Trim().Length > 0 ? item.PROD_NUMBER.ToString().Trim() + " - " + gender.Trim() : item.PROD_NUMBER.ToString().Trim();
-                    newRow["TITLE"] = item.PROD_NAME.ToString().Trim();
+                    newRow["TITLE"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
                     newRow["PROD_GENDER"] = gender.Trim();
                     newRow["PROD_DESCRIPTION"] = item.DESCRIPTION.ToString().Trim();
@@ -1457,12 +1508,25 @@ namespace TeamSports.Controllers
                 EAN_DB_DATA.Columns.Add("COLOR_NAME");
                 EAN_DB_DATA.Columns.Add("IMAGE_URL"); EAN_DB_DATA.Columns.Add("STATUS");
 
-                foreach (DataRow row in dt.Rows)
+                string ProdName = string.Empty;
+                string Prodnumber = string.Empty;
+
+                foreach (DataRow row in dataTable.Rows)
                 {
+
+
+
+                    if (row["UVP_DE"].ToString().Trim() == "" || row["UVP_DE"].ToString().Trim() == "0") continue;
+                    if (Prodnumber != row["STYLE"].ToString())
+                    {
+                        ProdName = row["STYLE_NAME"].ToString();
+                        Prodnumber = row["STYLE"].ToString();
+                    }
+
                     var newRow = EAN_DB_DATA.NewRow();
                     newRow["BRAND_ID"] = vBrandID;
                     newRow["BRAND_NAME"] = vBrandName;
-                    newRow["PRODUCT_NAME"] = row["STYLE_NAME"];
+                    newRow["PRODUCT_NAME"] = ProdName;
                     newRow["PRODUCT_NUMBER"] = row["STYLE"];
                     newRow["PRODUCT_GENDER"] = GenderMapping(row["GENDER"].ToString());
                     newRow["PRICE_UVP"] = row["UVP_DE"].ToString().Trim()?.Replace('.', ',');
@@ -1499,10 +1563,10 @@ namespace TeamSports.Controllers
                 }
 
                 var groupedData = from row in dataTable.AsEnumerable()
-                                  group row by new { PROD_NAME = row["STYLE_NAME"], PROD_NUMBER = row["STYLE"], TITLE = row["STYLE_NAME"], BASE_PRICE = row["UVP_DE"], GENDER = row["GENDER"], PRODUCT_DIVISION = row["PRODUCT_DIVISION"] } into grp
+                                  group row by new { PROD_NAME = row["STYLE_NAME"], PROD_NUMBER = row["STYLE"], TITLE = row["STYLE_NAME"], BASE_PRICE = row["UVP_DE"], GENDER = GenderMapping(row["GENDER"].ToString()), PRODUCT_DIVISION = row["PRODUCT_DIVISION"] } into grp
                                   select new
                                   {
-                                      PROD_NAME = grp.Key.PROD_NAME,
+                                      PROD_NAME = string.Join("#", grp.Select(r => r["STYLE_NAME"]).Distinct()),
                                       PROD_NUMBER = grp.Key.PROD_NUMBER,
                                       TITLE = grp.Key.TITLE,
                                       GENDER = grp.Key.GENDER,
@@ -1518,6 +1582,8 @@ namespace TeamSports.Controllers
 
                 foreach (var item in groupedData)
                 {
+                    if (item.BASE_PRICE.ToString().Trim() == "0" || item.BASE_PRICE.ToString().Trim() == "") continue;
+
                     if (vBrandName == "PUMA" && item.PRODUCT_DIVISION.ToString().ToLower().Contains("footwear")) continue;
 
                     DataRow newRow = resultTable.NewRow();
@@ -1526,12 +1592,12 @@ namespace TeamSports.Controllers
                     newRow["EAN"] = item.EAN.ToString().Trim();
                     newRow["BRAND"] = vBrandName;
                     newRow["LINE"] = "";
-                    newRow["PROD_NAME"] = item.PROD_NAME.ToString().Trim().ToString().Trim();
+                    newRow["PROD_NAME"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
                     newRow["PROD_NUMBER"] = item.PROD_NUMBER.ToString().Trim();
                     newRow["UNIFYING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim();
                     string gender = GenderMapping(item.GENDER.ToString().Trim());
                     newRow["SEPERATING_PROD_ID"] = gender.ToString().Trim().Length > 0 ? item.PROD_NUMBER.ToString().Trim() + " - " + gender : item.PROD_NUMBER.ToString().Trim();
-                    newRow["TITLE"] = item.PROD_NAME.ToString().Trim();
+                    newRow["TITLE"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
                     newRow["PROD_GENDER"] = gender.Trim();
                     newRow["PROD_DESCRIPTION"] = "".ToString().Trim();
@@ -1656,7 +1722,7 @@ namespace TeamSports.Controllers
                 ValueRange valueRange = new ValueRange();
                 valueRange.Values = mergedList;
                 var updateRequest = service.Spreadsheets.Values.Update(valueRange, spreadsheetId, range);
-                updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
+                updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
                 var updateResponse = await updateRequest.ExecuteAsync();
                 Console.WriteLine(updateResponse.ToString());
                 return true;
@@ -1729,7 +1795,7 @@ namespace TeamSports.Controllers
                 ValueRange valueRange = new ValueRange();
                 valueRange.Values = mergedList;
                 var updateRequest = service.Spreadsheets.Values.Update(valueRange, spreadsheetId, range);
-                updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
+                updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
                 var updateResponse = await updateRequest.ExecuteAsync();
 
 

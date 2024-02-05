@@ -379,12 +379,12 @@
                         var resultBody = "";
                         var resultHead = "";
                         resultHead += "<tr>";
-                        for (var i = 1; i < response?.header.length; i++) {
+                        for (var i = 2; i < response?.header.length; i++) {
                             resultHead += "<td style='text-align:center;'>" + response?.header[i] + "</td>";
                         }
                         resultHead += "</tr>";
                         console.log("a");
-                        for (var i = 1; i < response?.body.length; i++) {
+                        for (var i = 0; i < response?.body.length; i++) {
                             if (response?.body[i].ISEXIST == 1) {
                                 resultBody += "<tr style='background-color:#FFE2E5 !important'>";
                             }
@@ -392,7 +392,7 @@
                                 resultBody += "<tr style='background-color:#c9f7f5 !important'>";
                             }
 
-                            for (var j = 1; j < response?.header.length; j++) {
+                            for (var j = 2; j < response?.header.length; j++) {
                                 var colName = response?.header[j];
                                 resultBody += "<td style='text-align:center;'>" + response?.body[i][colName] + "</td>";
                             }
