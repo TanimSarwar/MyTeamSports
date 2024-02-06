@@ -388,13 +388,13 @@ namespace TeamSports.Controllers
 
 
                 var groupedData = from row in dataTable.AsEnumerable()
-                                  group row by new { PROD_NUMBER = row["ProductNumber"], BASE_PRICE = row["Price"], GENDER = GenderMapping(row["Gender"].ToString()), DESCRIPTION = row["Desccription"] } into grp
+                                  group row by new { PROD_NUMBER = row["ProductNumber"], BASE_PRICE = row["Price"], GENDER = GenderMapping(row["Gender"].ToString()) } into grp
                                   select new
                                   {
                                       PROD_NAME = string.Join("#", grp.Select(r => r["Name"]).Distinct()),
+                                      DESCRIPTION = string.Join("#", grp.Select(r => r["Desccription"]).Distinct()),
                                       PROD_NUMBER = grp.Key.PROD_NUMBER,
                                       GENDER = grp.Key.GENDER,
-                                      DESCRIPTION = grp.Key.DESCRIPTION,
                                       BASE_PRICE = grp.Key.BASE_PRICE,
                                       EAN = string.Join(";", grp.Select(r => r["EAN"]).Distinct()),
                                       SIZE = string.Join(";", grp.Select(r => r["Size"]).Distinct()),
@@ -512,7 +512,7 @@ namespace TeamSports.Controllers
                     newRow["TITLE"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
                     newRow["PROD_GENDER"] = gender.Trim();
-                    newRow["PROD_DESCRIPTION"] = Regex.Replace(item.DESCRIPTION.ToString().Trim(), expression, " ").Trim();
+                    newRow["PROD_DESCRIPTION"] = Regex.Replace(item.DESCRIPTION.Split("#")[0].ToString().Trim(), expression, " ").Trim();
                     newRow["HTML_BODY"] = "".ToString().Trim();
                     newRow["VENDOR"] = "".ToString().Trim();
                     newRow["TAGS"] = "".ToString().Trim();
@@ -636,13 +636,13 @@ namespace TeamSports.Controllers
                 dataTable = SortDataTable(dt, "StyleNo", "Größe", "lookupColorName");
 
                 var groupedData = from row in dataTable.AsEnumerable()
-                                  group row by new { PROD_NUMBER = row["StyleNo"], BASE_PRICE = row["LISTPRICEDEEUR"], GENDER = GenderMapping(row["Geschlecht(DE)"].ToString()), DESCRIPTION = row["ProductText(DE)"] } into grp
+                                  group row by new { PROD_NUMBER = row["StyleNo"], BASE_PRICE = row["LISTPRICEDEEUR"], GENDER = GenderMapping(row["Geschlecht(DE)"].ToString()) } into grp
                                   select new
                                   {
                                       PROD_NAME = string.Join("#", grp.Select(r => r["StyleName"]).Distinct()),
+                                      DESCRIPTION = string.Join("#", grp.Select(r => r["ProductText(DE)"]).Distinct()),
                                       PROD_NUMBER = grp.Key.PROD_NUMBER,
                                       GENDER = grp.Key.GENDER,
-                                      DESCRIPTION = grp.Key.DESCRIPTION,
                                       BASE_PRICE = grp.Key.BASE_PRICE,
                                       DigizuitePackshot = string.Join(";", grp.Select(r => r["DigizuitePackshot"]).Distinct()),
                                       DigizuitePackshot1 = string.Join(";", grp.Select(r => r["DigizuitePackshot1"]).Distinct()),
@@ -752,7 +752,7 @@ namespace TeamSports.Controllers
                     newRow["SEPERATING_PROD_ID"] = gender.Trim().Length > 0 ? item.PROD_NUMBER.ToString().Trim() + " - " + gender.Trim() : item.PROD_NUMBER.ToString().Trim();
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
                     newRow["PROD_GENDER"] = gender.Trim();
-                    newRow["PROD_DESCRIPTION"] = item.DESCRIPTION.ToString().Trim();
+                    newRow["PROD_DESCRIPTION"] = item.DESCRIPTION.Split("#")[0].ToString().Trim();
                     newRow["HTML_BODY"] = "".ToString().Trim();
                     newRow["VENDOR"] = "".ToString().Trim();
                     newRow["TAGS"] = "".ToString().Trim();
@@ -892,11 +892,11 @@ namespace TeamSports.Controllers
                                   select new
                                   {
                                       PROD_NAME = string.Join("#", grp.Select(r => r["ArtikelnameDE"]).Distinct()),
+                                      DESCRIPTION = string.Join("#", grp.Select(r => r["MarketingtextundUSPsDE"]).Distinct()),
                                       PROD_NUMBER = grp.Key.PROD_NUMBER,
                                       TYPE = grp.Key.TYPE,
                                       LINE = grp.Key.LINE,
                                       GENDER = grp.Key.GENDER,
-                                      DESCRIPTION = grp.Key.DESCRIPTION,
                                       BASE_PRICE = grp.Key.BASE_PRICE,
                                       EAN = string.Join(";", grp.Select(r => r["EANCode"]).Distinct()),
                                       SIZE = string.Join(";", grp.Select(r => r["Groesse"]).Distinct()),
@@ -1011,7 +1011,7 @@ namespace TeamSports.Controllers
                     newRow["TITLE"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
                     newRow["PRODUCT_TYPE"] = item.TYPE.ToString().Trim();
                     newRow["PROD_GENDER"] = gender.Trim();
-                    newRow["PROD_DESCRIPTION"] = item.DESCRIPTION.ToString().Trim();
+                    newRow["PROD_DESCRIPTION"] = item.DESCRIPTION.Split("#")[0].ToString().Trim();
                     newRow["HTML_BODY"] = "".ToString().Trim();
                     newRow["VENDOR"] = "".ToString().Trim();
                     newRow["TAGS"] = "".ToString().Trim();
@@ -1330,9 +1330,9 @@ namespace TeamSports.Controllers
                                   select new
                                   {
                                       PROD_NAME = string.Join("#", grp.Select(r => r["Description"]).Distinct()),
+                                      DESCRIPTION = string.Join("#", grp.Select(r => r["recommendedUVP"].ToString() + r["PriceIndividual"].ToString() + r["Text1"].ToString() + r["Text2"].ToString() + r["Text3"].ToString() + r["Text4"].ToString() + r["Text5"].ToString()).Distinct()),
                                       PROD_NUMBER = grp.Key.PROD_NUMBER,
                                       GENDER = grp.Key.GENDER,
-                                      DESCRIPTION = grp.Key.N + " " + grp.Key.M + " " + grp.Key.O + " " + grp.Key.P + " " + grp.Key.Q + " " + grp.Key.R + " " + grp.Key.S,
                                       BASE_PRICE = grp.Key.BASE_PRICE,
                                       EAN = string.Join(";", grp.Select(r => r["EAN"]).Distinct()),
                                       SIZE = string.Join(";", grp.Select(r => r["SIZE"]).Distinct()),
@@ -1360,7 +1360,7 @@ namespace TeamSports.Controllers
                     newRow["TITLE"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
                     newRow["PROD_GENDER"] = gender.Trim();
-                    newRow["PROD_DESCRIPTION"] = item.DESCRIPTION.ToString().Trim();
+                    newRow["PROD_DESCRIPTION"] = item.DESCRIPTION.Split("#")[0].ToString().Trim();
                     newRow["HTML_BODY"] = "".ToString().Trim();
                     newRow["VENDOR"] = "".ToString().Trim();
                     newRow["TAGS"] = "".ToString().Trim();
