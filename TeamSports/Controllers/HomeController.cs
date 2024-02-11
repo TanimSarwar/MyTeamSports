@@ -442,7 +442,7 @@ namespace TeamSports.Controllers
                     var newRow = EAN_DB_DATA.NewRow();
                     newRow["BRAND_ID"] = vBrandID;
                     newRow["BRAND_NAME"] = vBrandName;
-                    newRow["PRODUCT_NAME"] = ProdName;
+                    newRow["PRODUCT_NAME"] = replaceGermanUmlauts(ProdName);
 
                     string ColorCode = vBrandName.ToLower() == "nike" && row["ProductNumber"].ToString().Trim().Contains('-') ? row["ProductNumber"].ToString().Trim().Split('-')[1] : "0";
                     newRow["PRODUCT_NUMBER"] = PROD_NUMBER;
@@ -691,7 +691,7 @@ namespace TeamSports.Controllers
                     var newRow = EAN_DB_DATA.NewRow();
                     newRow["BRAND_ID"] = vBrandID;
                     newRow["BRAND_NAME"] = vBrandName;
-                    newRow["PRODUCT_NAME"] = ProdName;
+                    newRow["PRODUCT_NAME"] = replaceGermanUmlauts(ProdName);
                     newRow["PRODUCT_NUMBER"] = row["StyleNo"];
                     newRow["PRODUCT_GENDER"] = GenderMapping(row["Geschlecht(DE)"].ToString());
                     newRow["PRICE_UVP"] = row["LISTPRICEDEEUR"].ToString().Trim()?.Replace('.', ',');
@@ -943,7 +943,7 @@ namespace TeamSports.Controllers
                     var newRow = EAN_DB_DATA.NewRow();
                     newRow["BRAND_ID"] = vBrandID;
                     newRow["BRAND_NAME"] = vBrandName;
-                    newRow["PRODUCT_NAME"] = ProdName;
+                    newRow["PRODUCT_NAME"] = replaceGermanUmlauts(ProdName);
                     newRow["PRODUCT_NUMBER"] = "E" + row["Artikelnummer"];
                     newRow["PRODUCT_GENDER"] = GenderMapping(row["ZielgruppeDE"].ToString());
                     newRow["PRICE_UVP"] = row["DEEmpfVKEUR"].ToString().Trim()?.Replace('.', ',');
@@ -1266,7 +1266,7 @@ namespace TeamSports.Controllers
                     var newRow = EAN_DB_DATA.NewRow();
                     newRow["BRAND_ID"] = vBrandID;
                     newRow["BRAND_NAME"] = vBrandName;
-                    newRow["PRODUCT_NAME"] = ProdName;
+                    newRow["PRODUCT_NAME"] = replaceGermanUmlauts(ProdName);
                     newRow["PRODUCT_NUMBER"] = row["ItemNo"];
                     newRow["PRODUCT_GENDER"] = GenderMapping(row["GENDER"].ToString());
                     newRow["PRICE_UVP"] = row["UVP"].ToString().Trim()?.Replace('.', ',');
@@ -1526,7 +1526,7 @@ namespace TeamSports.Controllers
                     var newRow = EAN_DB_DATA.NewRow();
                     newRow["BRAND_ID"] = vBrandID;
                     newRow["BRAND_NAME"] = vBrandName;
-                    newRow["PRODUCT_NAME"] = ProdName;
+                    newRow["PRODUCT_NAME"] = replaceGermanUmlauts(ProdName);
                     newRow["PRODUCT_NUMBER"] = row["STYLE"];
                     newRow["PRODUCT_GENDER"] = GenderMapping(row["GENDER"].ToString());
                     newRow["PRICE_UVP"] = row["UVP_DE"].ToString().Trim()?.Replace('.', ',');
