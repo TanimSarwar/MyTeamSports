@@ -698,7 +698,7 @@ namespace TeamSports.Controllers
                     newRow["EAN"] = row["EAN"];
                     newRow["SIZE"] = row["Größe"];
                     newRow["COLOR_CODE"] = row["ColorCode"];
-                    newRow["COLOR_NAME"] = row["lookupColorName"];
+                    newRow["COLOR_NAME"] = replaceGermanUmlauts(row["lookupColorName"].ToString());
                     Uri uriResult;
                     string uriName = row["DigizuitePackshot"].ToString();
                     //bool result = Uri.TryCreate(uriName, UriKind.Absolute, out uriResult) && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
