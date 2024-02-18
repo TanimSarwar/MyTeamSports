@@ -386,181 +386,376 @@ namespace TeamSports.Controllers
 
                 dataTable = SortDataTable(dt, "ProductNumber", "Size", "Color");
 
-
-                var groupedData = from row in dataTable.AsEnumerable()
-                                  group row by new { PROD_NUMBER = row["ProductNumber"], BASE_PRICE = row["Price"], GENDER = GenderMapping(row["Gender"].ToString()) } into grp
-                                  select new
-                                  {
-                                      PROD_NAME = string.Join("#", grp.Select(r => r["Name"]).Distinct()),
-                                      DESCRIPTION = string.Join("#", grp.Select(r => r["Desccription"]).Distinct()),
-                                      PROD_NUMBER = grp.Key.PROD_NUMBER,
-                                      GENDER = grp.Key.GENDER,
-                                      BASE_PRICE = grp.Key.BASE_PRICE,
-                                      EAN = string.Join(";", grp.Select(r => r["EAN"]).Distinct()),
-                                      SIZE = string.Join(";", grp.Select(r => r["Size"]).Distinct()),
-                                      COLORNAME = string.Join(";", grp.Select(r => r["Color"]).Distinct()),
-                                      Images = string.Join(";", grp.Select(r => r["Images"]).Distinct())
-                                  };
-
-
-
-
-                string TableName = "EAN_DB";
-
-                // Delete any existing data regarding selected brand
-                int i = _dal.DeleteBrandFiles(TableName, vBrandID);
-
-
-                DataTable EAN_DB_DATA = new DataTable();
-                EAN_DB_DATA.Columns.Add("BRAND_ID");
-                EAN_DB_DATA.Columns.Add("BRAND_NAME");
-                EAN_DB_DATA.Columns.Add("PRODUCT_NAME");
-                EAN_DB_DATA.Columns.Add("PRODUCT_NUMBER");
-                EAN_DB_DATA.Columns.Add("PRODUCT_GENDER");
-                EAN_DB_DATA.Columns.Add("PRICE_UVP");
-                EAN_DB_DATA.Columns.Add("EAN");
-                EAN_DB_DATA.Columns.Add("SIZE");
-                EAN_DB_DATA.Columns.Add("COLOR_CODE");
-                EAN_DB_DATA.Columns.Add("COLOR_NAME");
-                EAN_DB_DATA.Columns.Add("IMAGE_URL"); EAN_DB_DATA.Columns.Add("STATUS");
-                string ProdName = string.Empty;
-                string Prodnumber = string.Empty;
-
-                foreach (DataRow row in dataTable.Rows)
+                if (vBrandName.ToLower() == "nike")
                 {
-                    string PROD_NUMBER = vBrandName.ToLower() == "nike" && row["ProductNumber"].ToString().Trim().Contains('-') ? row["ProductNumber"].ToString().Trim().Split('-')[0] : row["ProductNumber"].ToString().Trim();
-
-                    if (row["Price"].ToString().Trim() == "" || row["Price"].ToString().Trim() == "0") continue;
-                    if (Prodnumber != PROD_NUMBER)
+                    dataTable.Columns.Add("colorcode");
+                    foreach (DataRow r in dataTable.Rows)
                     {
-                        ProdName = row["Name"].ToString();
-                        Prodnumber = PROD_NUMBER;
+                       string colorcode= vBrandName.ToLower() == "nike" && r["ProductNumber"].ToString().Trim().Contains('-') ? r["ProductNumber"].ToString().Trim().Split('-')[1] : "0";
+                        string productname = vBrandName.ToLower() == "nike" && r["ProductNumber"].ToString().Trim().Contains('-') ? r["ProductNumber"].ToString().Trim().Split('-')[0] : r["ProductNumber"].ToString().Trim();
+                        r["ProductNumber"] = productname;
+                        r["colorcode"] = colorcode;
+
+
                     }
+                    var groupedData = from row in dataTable.AsEnumerable()
+                                      group row by new { PROD_NUMBER = row["ProductNumber"], BASE_PRICE = row["Price"], GENDER = GenderMapping(row["Gender"].ToString()) } into grp
+                                      select new
+                                      {
+                                          PROD_NAME = string.Join("#", grp.Select(r => r["Name"]).Distinct()),
+                                          DESCRIPTION = string.Join("#", grp.Select(r => r["Desccription"]).Distinct()),
+                                          PROD_NUMBER = grp.Key.PROD_NUMBER,
+                                          GENDER = grp.Key.GENDER,
+                                          BASE_PRICE = grp.Key.BASE_PRICE,
+                                          EAN = string.Join(";", grp.Select(r => r["EAN"]).Distinct()),
+                                          SIZE = string.Join(";", grp.Select(r => r["Size"]).Distinct()),
+                                          COLORCODE = string.Join(";", grp.Select(r => r["colorcode"]).Distinct()),
+                                          COLORNAME = string.Join(";", grp.Select(r => r["Color"]).Distinct()),
+                                          Images = string.Join(";", grp.Select(r => r["Images"]).Distinct())
+                                      };
 
 
 
-                    var newRow = EAN_DB_DATA.NewRow();
-                    newRow["BRAND_ID"] = vBrandID;
-                    newRow["BRAND_NAME"] = vBrandName;
-                    newRow["PRODUCT_NAME"] = replaceGermanUmlauts(ProdName);
 
-                    string ColorCode = vBrandName.ToLower() == "nike" && row["ProductNumber"].ToString().Trim().Contains('-') ? row["ProductNumber"].ToString().Trim().Split('-')[1] : "0";
-                    newRow["PRODUCT_NUMBER"] = PROD_NUMBER;
-                    newRow["PRODUCT_GENDER"] = GenderMapping(row["Gender"].ToString());
-                    newRow["PRICE_UVP"] = row["Price"].ToString().Trim()?.Replace('.', ',');
-                    newRow["EAN"] = row["EAN"];
-                    newRow["SIZE"] = row["Size"];
-                    newRow["COLOR_CODE"] = ColorCode;
-                    newRow["COLOR_NAME"] = row["Color"];
-                    newRow["IMAGE_URL"] = row["Images"];
-                    newRow["STATUS"] = 0;
-                    EAN_DB_DATA.Rows.Add(newRow);
-                }
+                    string TableName = "EAN_DB";
+
+                    // Delete any existing data regarding selected brand
+                    int i = _dal.DeleteBrandFiles(TableName, vBrandID);
 
 
+                    DataTable EAN_DB_DATA = new DataTable();
+                    EAN_DB_DATA.Columns.Add("BRAND_ID");
+                    EAN_DB_DATA.Columns.Add("BRAND_NAME");
+                    EAN_DB_DATA.Columns.Add("PRODUCT_NAME");
+                    EAN_DB_DATA.Columns.Add("PRODUCT_NUMBER");
+                    EAN_DB_DATA.Columns.Add("PRODUCT_GENDER");
+                    EAN_DB_DATA.Columns.Add("PRICE_UVP");
+                    EAN_DB_DATA.Columns.Add("EAN");
+                    EAN_DB_DATA.Columns.Add("SIZE");
+                    EAN_DB_DATA.Columns.Add("COLOR_CODE");
+                    EAN_DB_DATA.Columns.Add("COLOR_NAME");
+                    EAN_DB_DATA.Columns.Add("IMAGE_URL"); EAN_DB_DATA.Columns.Add("STATUS");
+                    string ProdName = string.Empty;
+                    string Prodnumber = string.Empty;
 
-                var config = _basicUtilities.GetConfiguration();
-                string conString = config.GetSection("ConnectionStrings:sqlconnection").Value;
-                using (SqlConnection con = new SqlConnection(conString))
-                {
-
-                    using (SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(con))
+                    foreach (DataRow row in dataTable.Rows)
                     {
+                        string PROD_NUMBER = row["ProductNumber"].ToString().Trim();
 
-                        sqlBulkCopy.BulkCopyTimeout = 600;
-                        sqlBulkCopy.DestinationTableName = "dbo." + TableName;
-                        DataColumnCollection dataColumnCollection = EAN_DB_DATA.Columns;
-                        for (int j = 0; j < dataColumnCollection.Count; j++)
+                        if (row["Price"].ToString().Trim() == "" || row["Price"].ToString().Trim() == "0") continue;
+                        if (Prodnumber != PROD_NUMBER)
                         {
-                            string columnName = dataColumnCollection[j].ToString()?.Replace(" ", "");
-                            sqlBulkCopy.ColumnMappings.Add(columnName, columnName);
+                            ProdName = row["Name"].ToString();
+                            Prodnumber = PROD_NUMBER;
                         }
-                        con.Open();
-                        sqlBulkCopy.WriteToServer(EAN_DB_DATA);
-                        con.Close();
+
+
+
+                        var newRow = EAN_DB_DATA.NewRow();
+                        newRow["BRAND_ID"] = vBrandID;
+                        newRow["BRAND_NAME"] = vBrandName;
+                        newRow["PRODUCT_NAME"] = replaceGermanUmlauts(ProdName);
+
+                        string ColorCode = row["colorcode"].ToString().Trim();
+                        newRow["PRODUCT_NUMBER"] = PROD_NUMBER;
+                        newRow["PRODUCT_GENDER"] = GenderMapping(row["Gender"].ToString());
+                        newRow["PRICE_UVP"] = row["Price"].ToString().Trim()?.Replace('.', ',');
+                        newRow["EAN"] = row["EAN"];
+                        newRow["SIZE"] = row["Size"];
+                        newRow["COLOR_CODE"] = ColorCode;
+                        newRow["COLOR_NAME"] = replaceGermanUmlauts(row["Color"].ToString());
+                        newRow["IMAGE_URL"] = row["Images"];
+                        newRow["STATUS"] = 0;
+                        EAN_DB_DATA.Rows.Add(newRow);
+                    }
+
+
+
+                    var config = _basicUtilities.GetConfiguration();
+                    string conString = config.GetSection("ConnectionStrings:sqlconnection").Value;
+                    using (SqlConnection con = new SqlConnection(conString))
+                    {
+
+                        using (SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(con))
+                        {
+
+                            sqlBulkCopy.BulkCopyTimeout = 600;
+                            sqlBulkCopy.DestinationTableName = "dbo." + TableName;
+                            DataColumnCollection dataColumnCollection = EAN_DB_DATA.Columns;
+                            for (int j = 0; j < dataColumnCollection.Count; j++)
+                            {
+                                string columnName = dataColumnCollection[j].ToString()?.Replace(" ", "");
+                                sqlBulkCopy.ColumnMappings.Add(columnName, columnName);
+                            }
+                            con.Open();
+                            sqlBulkCopy.WriteToServer(EAN_DB_DATA);
+                            con.Close();
+                        }
+                    }
+
+
+
+
+
+
+                    string expression = "<.*?>";
+
+                    foreach (var item in groupedData)
+                    {
+                        if (item.BASE_PRICE.ToString().Trim() == "0" || item.BASE_PRICE.ToString().Trim() == "") continue;
+
+                        DataRow newRow = resultTable.NewRow();
+
+                        newRow["BRANDID"] = vBrandID;
+                        newRow["EAN"] = item.EAN.ToString().Trim();
+                        newRow["BRAND"] = vBrandName;
+                        newRow["LINE"] = "".ToString().Trim();
+                        newRow["PROD_NAME"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
+
+                        string PROD_NUMBER = item.PROD_NUMBER.ToString().Trim();
+                        string COLORCODE = item.COLORCODE.ToString().Trim();
+
+                        newRow["PROD_NUMBER"] = PROD_NUMBER;
+                        newRow["UNIFYING_PROD_ID"] = PROD_NUMBER;
+
+
+                        string gender = GenderMapping(item.GENDER.ToString());
+                        newRow["SEPERATING_PROD_ID"] = gender.Trim().Length > 0 ? PROD_NUMBER + " - " + gender.Trim() : PROD_NUMBER;
+
+                        newRow["TITLE"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
+                        newRow["PRODUCT_TYPE"] = "".ToString().Trim();
+                        newRow["PROD_GENDER"] = gender.Trim();
+                        newRow["PROD_DESCRIPTION"] = replaceGermanUmlauts(Regex.Replace(item.DESCRIPTION.Split("#")[0].ToString().Trim(), expression, " ").Trim());
+                        newRow["HTML_BODY"] = "".ToString().Trim();
+                        newRow["VENDOR"] = "".ToString().Trim();
+                        newRow["TAGS"] = "".ToString().Trim();
+                        newRow["PUBLISHED"] = "".ToString().Trim();
+                        newRow["MANUFACTURER_SIZE_SPECTRUM"] = item.SIZE.ToString().Trim();
+                        newRow["STORE_SIZE_SPECTRUM"] = item.SIZE.ToString().Trim();
+                        newRow["MANUFAC_COLOR_SPECTRUM_NAMES"] = replaceGermanUmlauts(item.COLORNAME.ToString().Trim());
+                        newRow["MANUFAC_COLOR_SPECTRUM_CODES"] = COLORCODE;
+                        newRow["STORE_COLOR_SPECTRUM"] = replaceGermanUmlauts(item.COLORNAME.ToString().Trim());
+                        newRow["COLOR_SELECTION"] = "".ToString().Trim();
+                        newRow["EXTRA_OPT_NAME"] = "".ToString().Trim();
+                        newRow["EXTRA_OPT_VAL"] = "".ToString().Trim();
+                        newRow["VERSION_NAME"] = "".ToString().Trim();
+                        newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim()?.Replace('.', ',');
+                        newRow["VARIANT_GRAMS"] = "".ToString().Trim();
+                        newRow["VARIANT_INV_TRACKER"] = "".ToString().Trim();
+                        newRow["VARIANT_INV_QTY"] = "".ToString().Trim();
+                        newRow["VARIANT_INV_POLICY"] = "".ToString().Trim();
+                        newRow["VARIANT_FULFILLMENT_SERVICE"] = "".ToString().Trim();
+                        newRow["VARIANT_COMP_AT_PRICE"] = "".ToString().Trim();
+                        newRow["VARIANT_REQ_SHIPPING"] = "".ToString().Trim();
+                        newRow["VAR_TAXABLE"] = "".ToString().Trim();
+                        newRow["VARIANT_BCODE"] = "".ToString().Trim();
+                        newRow["IMAGE_POSITION"] = "".ToString().Trim();
+                        newRow["IMAGE_ALT_TXT"] = "".ToString().Trim();
+                        newRow["GIFT_CARD"] = "".ToString().Trim();
+                        newRow["SEO_TITLE"] = "".ToString().Trim();
+                        newRow["VARIANT_IMAGE"] = item.Images.ToString().Trim();
+                        newRow["VARIANT_WEIGHT_UNIT"] = "".ToString().Trim();
+                        newRow["VARIANT_TAX_CODE"] = "".ToString().Trim();
+                        newRow["COST_PER_ITEM"] = "".ToString().Trim();
+                        newRow["PRICE_INTERNATIONAL"] = "".ToString().Trim();
+                        newRow["COMP_AT_PRICE_INTL"] = "".ToString().Trim();
+                        newRow["STATUS"] = "".ToString().Trim();
+
+                        string inputString = item.PROD_NAME.ToString().Trim().ToLower();
+                        string stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
+                        string result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
+                        result = replaceGermanUmlauts(result);
+                        newRow["PROD_FILE_NAME"] = result;
+
+                        inputString = item.COLORNAME.ToString().Trim().ToLower();
+                        stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
+                        result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
+
+                        newRow["COLOR_NAMES"] = ";" + replaceGermanUmlauts(result);
+                        resultTable.Rows.Add(newRow);
+                    }
+                }
+                else
+                {
+                    var groupedData = from row in dataTable.AsEnumerable()
+                                      group row by new { PROD_NUMBER = row["ProductNumber"], BASE_PRICE = row["Price"], GENDER = GenderMapping(row["Gender"].ToString()) } into grp
+                                      select new
+                                      {
+                                          PROD_NAME = string.Join("#", grp.Select(r => r["Name"]).Distinct()),
+                                          DESCRIPTION = string.Join("#", grp.Select(r => r["Desccription"]).Distinct()),
+                                          PROD_NUMBER = grp.Key.PROD_NUMBER,
+                                          GENDER = grp.Key.GENDER,
+                                          BASE_PRICE = grp.Key.BASE_PRICE,
+                                          EAN = string.Join(";", grp.Select(r => r["EAN"]).Distinct()),
+                                          SIZE = string.Join(";", grp.Select(r => r["Size"]).Distinct()),
+                                          COLORNAME = string.Join(";", grp.Select(r => r["Color"]).Distinct()),
+                                          Images = string.Join(";", grp.Select(r => r["Images"]).Distinct())
+                                      };
+
+
+
+
+                    string TableName = "EAN_DB";
+
+                    // Delete any existing data regarding selected brand
+                    int i = _dal.DeleteBrandFiles(TableName, vBrandID);
+
+
+                    DataTable EAN_DB_DATA = new DataTable();
+                    EAN_DB_DATA.Columns.Add("BRAND_ID");
+                    EAN_DB_DATA.Columns.Add("BRAND_NAME");
+                    EAN_DB_DATA.Columns.Add("PRODUCT_NAME");
+                    EAN_DB_DATA.Columns.Add("PRODUCT_NUMBER");
+                    EAN_DB_DATA.Columns.Add("PRODUCT_GENDER");
+                    EAN_DB_DATA.Columns.Add("PRICE_UVP");
+                    EAN_DB_DATA.Columns.Add("EAN");
+                    EAN_DB_DATA.Columns.Add("SIZE");
+                    EAN_DB_DATA.Columns.Add("COLOR_CODE");
+                    EAN_DB_DATA.Columns.Add("COLOR_NAME");
+                    EAN_DB_DATA.Columns.Add("IMAGE_URL"); EAN_DB_DATA.Columns.Add("STATUS");
+                    string ProdName = string.Empty;
+                    string Prodnumber = string.Empty;
+
+                    foreach (DataRow row in dataTable.Rows)
+                    {
+                        string PROD_NUMBER = row["ProductNumber"].ToString().Trim();
+
+                        if (row["Price"].ToString().Trim() == "" || row["Price"].ToString().Trim() == "0") continue;
+                        if (Prodnumber != PROD_NUMBER)
+                        {
+                            ProdName = row["Name"].ToString();
+                            Prodnumber = PROD_NUMBER;
+                        }
+
+
+
+                        var newRow = EAN_DB_DATA.NewRow();
+                        newRow["BRAND_ID"] = vBrandID;
+                        newRow["BRAND_NAME"] = vBrandName;
+                        newRow["PRODUCT_NAME"] = replaceGermanUmlauts(ProdName);
+
+                        string ColorCode = "0";
+                        newRow["PRODUCT_NUMBER"] = PROD_NUMBER;
+                        newRow["PRODUCT_GENDER"] = GenderMapping(row["Gender"].ToString());
+                        newRow["PRICE_UVP"] = row["Price"].ToString().Trim()?.Replace('.', ',');
+                        newRow["EAN"] = row["EAN"];
+                        newRow["SIZE"] = row["Size"];
+                        newRow["COLOR_CODE"] = ColorCode;
+                        newRow["COLOR_NAME"] = replaceGermanUmlauts(row["Color"].ToString());
+                        newRow["IMAGE_URL"] = row["Images"];
+                        newRow["STATUS"] = 0;
+                        EAN_DB_DATA.Rows.Add(newRow);
+                    }
+
+
+
+                    var config = _basicUtilities.GetConfiguration();
+                    string conString = config.GetSection("ConnectionStrings:sqlconnection").Value;
+                    using (SqlConnection con = new SqlConnection(conString))
+                    {
+
+                        using (SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(con))
+                        {
+
+                            sqlBulkCopy.BulkCopyTimeout = 600;
+                            sqlBulkCopy.DestinationTableName = "dbo." + TableName;
+                            DataColumnCollection dataColumnCollection = EAN_DB_DATA.Columns;
+                            for (int j = 0; j < dataColumnCollection.Count; j++)
+                            {
+                                string columnName = dataColumnCollection[j].ToString()?.Replace(" ", "");
+                                sqlBulkCopy.ColumnMappings.Add(columnName, columnName);
+                            }
+                            con.Open();
+                            sqlBulkCopy.WriteToServer(EAN_DB_DATA);
+                            con.Close();
+                        }
+                    }
+
+
+
+
+
+
+                    string expression = "<.*?>";
+
+                    foreach (var item in groupedData)
+                    {
+                        if (item.BASE_PRICE.ToString().Trim() == "0" || item.BASE_PRICE.ToString().Trim() == "") continue;
+
+                        DataRow newRow = resultTable.NewRow();
+
+                        newRow["BRANDID"] = vBrandID;
+                        newRow["EAN"] = item.EAN.ToString().Trim();
+                        newRow["BRAND"] = vBrandName;
+                        newRow["LINE"] = "".ToString().Trim();
+                        newRow["PROD_NAME"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
+
+                        string PROD_NUMBER = item.PROD_NUMBER.ToString().Trim();
+                        string colorcode = "0".ToString().Trim();
+
+                        newRow["PROD_NUMBER"] = PROD_NUMBER;
+                        newRow["UNIFYING_PROD_ID"] = PROD_NUMBER;
+
+
+                        string gender = GenderMapping(item.GENDER.ToString());
+                        newRow["SEPERATING_PROD_ID"] = gender.Trim().Length > 0 ? PROD_NUMBER + " - " + gender.Trim() : PROD_NUMBER;
+
+                        newRow["TITLE"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
+                        newRow["PRODUCT_TYPE"] = "".ToString().Trim();
+                        newRow["PROD_GENDER"] = gender.Trim();
+                        newRow["PROD_DESCRIPTION"] = replaceGermanUmlauts(Regex.Replace(item.DESCRIPTION.Split("#")[0].ToString().Trim(), expression, " ").Trim());
+                        newRow["HTML_BODY"] = "".ToString().Trim();
+                        newRow["VENDOR"] = "".ToString().Trim();
+                        newRow["TAGS"] = "".ToString().Trim();
+                        newRow["PUBLISHED"] = "".ToString().Trim();
+                        newRow["MANUFACTURER_SIZE_SPECTRUM"] = item.SIZE.ToString().Trim();
+                        newRow["STORE_SIZE_SPECTRUM"] = item.SIZE.ToString().Trim();
+                        newRow["MANUFAC_COLOR_SPECTRUM_NAMES"] = replaceGermanUmlauts(item.COLORNAME.ToString().Trim());
+                        newRow["MANUFAC_COLOR_SPECTRUM_CODES"] = colorcode;
+                        newRow["STORE_COLOR_SPECTRUM"] = item.COLORNAME.ToString().Trim();
+                        newRow["COLOR_SELECTION"] = "".ToString().Trim();
+                        newRow["EXTRA_OPT_NAME"] = "".ToString().Trim();
+                        newRow["EXTRA_OPT_VAL"] = "".ToString().Trim();
+                        newRow["VERSION_NAME"] = "".ToString().Trim();
+                        newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim()?.Replace('.', ',');
+                        newRow["VARIANT_GRAMS"] = "".ToString().Trim();
+                        newRow["VARIANT_INV_TRACKER"] = "".ToString().Trim();
+                        newRow["VARIANT_INV_QTY"] = "".ToString().Trim();
+                        newRow["VARIANT_INV_POLICY"] = "".ToString().Trim();
+                        newRow["VARIANT_FULFILLMENT_SERVICE"] = "".ToString().Trim();
+                        newRow["VARIANT_COMP_AT_PRICE"] = "".ToString().Trim();
+                        newRow["VARIANT_REQ_SHIPPING"] = "".ToString().Trim();
+                        newRow["VAR_TAXABLE"] = "".ToString().Trim();
+                        newRow["VARIANT_BCODE"] = "".ToString().Trim();
+                        newRow["IMAGE_POSITION"] = "".ToString().Trim();
+                        newRow["IMAGE_ALT_TXT"] = "".ToString().Trim();
+                        newRow["GIFT_CARD"] = "".ToString().Trim();
+                        newRow["SEO_TITLE"] = "".ToString().Trim();
+                        newRow["VARIANT_IMAGE"] = item.Images.ToString().Trim();
+                        newRow["VARIANT_WEIGHT_UNIT"] = "".ToString().Trim();
+                        newRow["VARIANT_TAX_CODE"] = "".ToString().Trim();
+                        newRow["COST_PER_ITEM"] = "".ToString().Trim();
+                        newRow["PRICE_INTERNATIONAL"] = "".ToString().Trim();
+                        newRow["COMP_AT_PRICE_INTL"] = "".ToString().Trim();
+                        newRow["STATUS"] = "".ToString().Trim();
+
+                        string inputString = item.PROD_NAME.ToString().Trim().ToLower();
+                        string stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
+                        string result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
+                        result = replaceGermanUmlauts(result);
+                        newRow["PROD_FILE_NAME"] = result;
+
+                        inputString = item.COLORNAME.ToString().Trim().ToLower();
+                        stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
+                        result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
+
+                        newRow["COLOR_NAMES"] = ";" + replaceGermanUmlauts(result);
+                        resultTable.Rows.Add(newRow);
                     }
                 }
 
 
-
-
-
-
-                string expression = "<.*?>";
-
-                foreach (var item in groupedData)
-                {
-                    if (item.BASE_PRICE.ToString().Trim() == "0" || item.BASE_PRICE.ToString().Trim() == "") continue;
-
-                    DataRow newRow = resultTable.NewRow();
-
-                    newRow["BRANDID"] = vBrandID;
-                    newRow["EAN"] = item.EAN.ToString().Trim();
-                    newRow["BRAND"] = vBrandName;
-                    newRow["LINE"] = "".ToString().Trim();
-                    newRow["PROD_NAME"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
-
-                    string PROD_NUMBER = vBrandName.ToLower() == "nike" && item.PROD_NUMBER.ToString().Trim().Contains('-') ? item.PROD_NUMBER.ToString().Trim().Split('-')[0] : item.PROD_NUMBER.ToString().Trim();
-
-                    newRow["PROD_NUMBER"] = PROD_NUMBER;
-                    newRow["UNIFYING_PROD_ID"] = PROD_NUMBER;
-
-
-                    string gender = GenderMapping(item.GENDER.ToString());
-                    newRow["SEPERATING_PROD_ID"] = gender.Trim().Length > 0 ? item.PROD_NUMBER.ToString().Trim() + " - " + gender.Trim() : item.PROD_NUMBER.ToString().Trim();
-
-                    newRow["TITLE"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
-                    newRow["PRODUCT_TYPE"] = "".ToString().Trim();
-                    newRow["PROD_GENDER"] = gender.Trim();
-                    newRow["PROD_DESCRIPTION"] = Regex.Replace(item.DESCRIPTION.Split("#")[0].ToString().Trim(), expression, " ").Trim();
-                    newRow["HTML_BODY"] = "".ToString().Trim();
-                    newRow["VENDOR"] = "".ToString().Trim();
-                    newRow["TAGS"] = "".ToString().Trim();
-                    newRow["PUBLISHED"] = "".ToString().Trim();
-                    newRow["MANUFACTURER_SIZE_SPECTRUM"] = item.SIZE.ToString().Trim();
-                    newRow["STORE_SIZE_SPECTRUM"] = item.SIZE.ToString().Trim();
-                    newRow["MANUFAC_COLOR_SPECTRUM_NAMES"] = item.COLORNAME.ToString().Trim();
-                    newRow["MANUFAC_COLOR_SPECTRUM_CODES"] = vBrandName.ToLower() == "nike" && item.PROD_NUMBER.ToString().Trim().Contains('-') ? item.PROD_NUMBER.ToString().Trim().Split('-')[1] : 0.ToString().Trim();
-                    newRow["STORE_COLOR_SPECTRUM"] = item.COLORNAME.ToString().Trim();
-                    newRow["COLOR_SELECTION"] = "".ToString().Trim();
-                    newRow["EXTRA_OPT_NAME"] = "".ToString().Trim();
-                    newRow["EXTRA_OPT_VAL"] = "".ToString().Trim();
-                    newRow["VERSION_NAME"] = "".ToString().Trim();
-                    newRow["BASE_PRICE"] = item.BASE_PRICE.ToString().Trim()?.Replace('.', ',');
-                    newRow["VARIANT_GRAMS"] = "".ToString().Trim();
-                    newRow["VARIANT_INV_TRACKER"] = "".ToString().Trim();
-                    newRow["VARIANT_INV_QTY"] = "".ToString().Trim();
-                    newRow["VARIANT_INV_POLICY"] = "".ToString().Trim();
-                    newRow["VARIANT_FULFILLMENT_SERVICE"] = "".ToString().Trim();
-                    newRow["VARIANT_COMP_AT_PRICE"] = "".ToString().Trim();
-                    newRow["VARIANT_REQ_SHIPPING"] = "".ToString().Trim();
-                    newRow["VAR_TAXABLE"] = "".ToString().Trim();
-                    newRow["VARIANT_BCODE"] = "".ToString().Trim();
-                    newRow["IMAGE_POSITION"] = "".ToString().Trim();
-                    newRow["IMAGE_ALT_TXT"] = "".ToString().Trim();
-                    newRow["GIFT_CARD"] = "".ToString().Trim();
-                    newRow["SEO_TITLE"] = "".ToString().Trim();
-                    newRow["VARIANT_IMAGE"] = item.Images.ToString().Trim();
-                    newRow["VARIANT_WEIGHT_UNIT"] = "".ToString().Trim();
-                    newRow["VARIANT_TAX_CODE"] = "".ToString().Trim();
-                    newRow["COST_PER_ITEM"] = "".ToString().Trim();
-                    newRow["PRICE_INTERNATIONAL"] = "".ToString().Trim();
-                    newRow["COMP_AT_PRICE_INTL"] = "".ToString().Trim();
-                    newRow["STATUS"] = "".ToString().Trim();
-
-                    string inputString = item.PROD_NAME.ToString().Trim().ToLower();
-                    string stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
-                    string result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
-                    result = replaceGermanUmlauts(result);
-                    newRow["PROD_FILE_NAME"] = result;
-
-                    inputString = item.COLORNAME.ToString().Trim().ToLower();
-                    stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
-                    result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
-
-                    newRow["COLOR_NAMES"] = ";" + result;
-                    resultTable.Rows.Add(newRow);
-                }
+               
                 dataTable = resultTable;
             }
             catch (Exception e)
@@ -752,7 +947,7 @@ namespace TeamSports.Controllers
                     newRow["SEPERATING_PROD_ID"] = gender.Trim().Length > 0 ? item.PROD_NUMBER.ToString().Trim() + " - " + gender.Trim() : item.PROD_NUMBER.ToString().Trim();
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
                     newRow["PROD_GENDER"] = gender.Trim();
-                    newRow["PROD_DESCRIPTION"] = item.DESCRIPTION.Split("#")[0].ToString().Trim();
+                    newRow["PROD_DESCRIPTION"] = replaceGermanUmlauts(item.DESCRIPTION.Split("#")[0].ToString().Trim());
                     newRow["HTML_BODY"] = "".ToString().Trim();
                     newRow["VENDOR"] = "".ToString().Trim();
                     newRow["TAGS"] = "".ToString().Trim();
@@ -810,7 +1005,7 @@ namespace TeamSports.Controllers
                     stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
                     result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
 
-                    newRow["COLOR_NAMES"] = ";" + result;
+                    newRow["COLOR_NAMES"] = ";" + replaceGermanUmlauts(result);
                     resultTable.Rows.Add(newRow);
                 }
 
@@ -950,7 +1145,7 @@ namespace TeamSports.Controllers
                     newRow["EAN"] = row["EANCode"];
                     newRow["SIZE"] = row["Groesse"];
                     newRow["COLOR_CODE"] = 0;
-                    newRow["COLOR_NAME"] = row["FarbeDE"];
+                    newRow["COLOR_NAME"] = replaceGermanUmlauts(row["FarbeDE"].ToString());
                     newRow["IMAGE_URL"] = "";
                     EAN_DB_DATA.Rows.Add(newRow);
                 }
@@ -1011,7 +1206,7 @@ namespace TeamSports.Controllers
                     newRow["TITLE"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
                     newRow["PRODUCT_TYPE"] = item.TYPE.ToString().Trim();
                     newRow["PROD_GENDER"] = gender.Trim();
-                    newRow["PROD_DESCRIPTION"] = item.DESCRIPTION.Split("#")[0].ToString().Trim();
+                    newRow["PROD_DESCRIPTION"] = replaceGermanUmlauts(item.DESCRIPTION.Split("#")[0].ToString().Trim());
                     newRow["HTML_BODY"] = "".ToString().Trim();
                     newRow["VENDOR"] = "".ToString().Trim();
                     newRow["TAGS"] = "".ToString().Trim();
@@ -1057,7 +1252,7 @@ namespace TeamSports.Controllers
                     stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
                     result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
 
-                    newRow["COLOR_NAMES"] = ";" + result;
+                    newRow["COLOR_NAMES"] = ";" + replaceGermanUmlauts(result);
                     resultTable.Rows.Add(newRow);
                 }
 
@@ -1273,7 +1468,7 @@ namespace TeamSports.Controllers
                     newRow["EAN"] = row["EAN"];
                     newRow["SIZE"] = row["SIZE"];
                     newRow["COLOR_CODE"] = row["ColorCode"];
-                    newRow["COLOR_NAME"] = row["ColorDescription"];
+                    newRow["COLOR_NAME"] = replaceGermanUmlauts(row["ColorDescription"].ToString());
                     newRow["IMAGE_URL"] = "";
                     newRow["STATUS"] = 0;
                     EAN_DB_DATA.Rows.Add(newRow);
@@ -1360,7 +1555,7 @@ namespace TeamSports.Controllers
                     newRow["TITLE"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
                     newRow["PROD_GENDER"] = gender.Trim();
-                    newRow["PROD_DESCRIPTION"] = item.DESCRIPTION.Split("#")[0].ToString().Trim();
+                    newRow["PROD_DESCRIPTION"] = replaceGermanUmlauts(item.DESCRIPTION.Split("#")[0].ToString().Trim());
                     newRow["HTML_BODY"] = "".ToString().Trim();
                     newRow["VENDOR"] = "".ToString().Trim();
                     newRow["TAGS"] = "".ToString().Trim();
@@ -1406,7 +1601,7 @@ namespace TeamSports.Controllers
                     stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
                     result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
 
-                    newRow["COLOR_NAMES"] = ";" + result;
+                    newRow["COLOR_NAMES"] = ";" + replaceGermanUmlauts(result);
                     resultTable.Rows.Add(newRow);
                 }
 
@@ -1533,7 +1728,7 @@ namespace TeamSports.Controllers
                     newRow["EAN"] = row["EAN"];
                     newRow["SIZE"] = row["SIZE"];
                     newRow["COLOR_CODE"] = row["COLOR"];
-                    newRow["COLOR_NAME"] = row["COLOR_NAME"];
+                    newRow["COLOR_NAME"] = replaceGermanUmlauts(row["COLOR_NAME"].ToString());
                     newRow["IMAGE_URL"] = row["BILDLINK"];
                     EAN_DB_DATA.Rows.Add(newRow);
                 }
@@ -1646,7 +1841,7 @@ namespace TeamSports.Controllers
                     stringWithHyphens = Regex.Replace(inputString, @"\s", "-");
                     result = Regex.Replace(stringWithHyphens, @"[^\w\d;]", "");
 
-                    newRow["COLOR_NAMES"] = ";" + result;
+                    newRow["COLOR_NAMES"] = ";" + replaceGermanUmlauts(result);
                     resultTable.Rows.Add(newRow);
                 }
 
