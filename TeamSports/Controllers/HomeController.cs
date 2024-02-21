@@ -386,13 +386,13 @@ namespace TeamSports.Controllers
 
                 dataTable = SortDataTable(dt, "ProductNumber", "Size", "Color");
 
-                if (vBrandName.ToLower() == "nike")
+                if (vBrandName.ToLower() == "nike" || vBrandName.ToLower() == "jako" || vBrandName.ToLower() == "puma")
                 {
                     dataTable.Columns.Add("colorcode");
                     foreach (DataRow r in dataTable.Rows)
                     {
-                       string colorcode= vBrandName.ToLower() == "nike" && r["ProductNumber"].ToString().Trim().Contains('-') ? r["ProductNumber"].ToString().Trim().Split('-')[1] : "0";
-                        string productname = vBrandName.ToLower() == "nike" && r["ProductNumber"].ToString().Trim().Contains('-') ? r["ProductNumber"].ToString().Trim().Split('-')[0] : r["ProductNumber"].ToString().Trim();
+                       string colorcode= r["ProductNumber"].ToString().Trim().Contains('-') ? r["ProductNumber"].ToString().Trim().Split('-')[1] : "0";
+                        string productname = r["ProductNumber"].ToString().Trim().Contains('-') ? r["ProductNumber"].ToString().Trim().Split('-')[0] : r["ProductNumber"].ToString().Trim();
                         r["ProductNumber"] = productname;
                         r["colorcode"] = colorcode;
 
@@ -1710,7 +1710,7 @@ namespace TeamSports.Controllers
                 {
 
 
-
+                    row["GENDER"] = row["GENDER"] + " " + row["AGE_GROUP"];
                     if (row["UVP_DE"].ToString().Trim() == "" || row["UVP_DE"].ToString().Trim() == "0") continue;
                     if (Prodnumber != row["STYLE"].ToString())
                     {
@@ -1767,7 +1767,6 @@ namespace TeamSports.Controllers
                                       GENDER = grp.Key.GENDER,
                                       PRODUCT_DIVISION = grp.Key.PRODUCT_DIVISION,
                                       BASE_PRICE = grp.Key.BASE_PRICE,
-                                      AGE_GROUP = string.Join(";", grp.Select(r => r["AGE_GROUP"]).Distinct()),
                                       EAN = string.Join(";", grp.Select(r => r["EAN"]).Distinct()),
                                       SIZE = string.Join(";", grp.Select(r => r["SIZE"]).Distinct()),
                                       COLORCODE = string.Join(";", grp.Select(r => r["COLOR"]).Distinct()),
@@ -2154,6 +2153,8 @@ namespace TeamSports.Controllers
                 skip += fixediteration;
                 output2 = await UploadDataToEANSheet(dt, _BRAND_NAME, _OP, ClearEAN);
                 ClearEAN = false;
+
+                Thread.Sleep(1000);
             }
             if (output2)
             {
