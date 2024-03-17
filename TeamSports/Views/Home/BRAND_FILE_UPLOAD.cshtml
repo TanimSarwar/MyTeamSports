@@ -244,7 +244,7 @@
                     Swal.fire(
                         'success',
                         'Excel file has been sumbitted successfully. Please wait while we pull your data',
-                        'Successful!'
+                        'success'
                     )
                     setTimeout(() => { Get_DB_Data(); }, 100)
 
@@ -314,7 +314,7 @@
 
                                 'success',
                                 'File Upload Discarded',
-                                'Successful!'
+                                'success'
                             )
 
                             setTimeout(function () {
@@ -530,7 +530,7 @@
                         Swal.fire(
                             'success',
                             'Article Has Been Deleted',
-                            'Successful!'
+                            'success'
                         )
                         Get_ALT_Data(0);
                         Get_ALT_Data(type);
@@ -602,25 +602,25 @@
                         'success'
                     )
 
-                    Swal.fire({
-                        title: "Do you want to add check box in main sheet?",
-                        icon: "question",
-                        showDenyButton: true,
-                        confirmButtonText: "Yes",
-                        denyButtonText: `No`, allowOutsideClick: false,
-                    }).then((result) => {
+                    // Swal.fire({
+                    //     title: "Do you want to add check box in main sheet?",
+                    //     icon: "question",
+                    //     showDenyButton: true,
+                    //     confirmButtonText: "Yes",
+                    //     denyButtonText: `No`, allowOutsideClick: false,
+                    // }).then((result) => {
 
-                        /* Read more about isConfirmed, isDenied below */
-                        if (result.isConfirmed) {
-                            swal.showLoading();
-                            window.location.href = "/Authorize";
-                        }
-                        else {
-                            location.reload();
-                        }
-                    });
+                    //     /* Read more about isConfirmed, isDenied below */
+                    //     if (result.isConfirmed) {
+                    //         swal.showLoading();
+                    //         window.location.href = "/Authorize";
+                    //     }
+                    //     else {
+                    //         location.reload();
+                    //     }
+                    // });
 
-
+                    location.reload();
 
 
                 }

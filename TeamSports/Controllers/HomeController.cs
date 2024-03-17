@@ -5,7 +5,9 @@ using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using OfficeOpenXml;
 using System.Data;
 using System.Data.Common;
 using System.Data.OleDb;
@@ -14,6 +16,7 @@ using System.Diagnostics;
 using System.Drawing.Drawing2D;
 using System.Drawing.Printing;
 using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 using TeamSports.DAL;
 using TeamSports.Models;
@@ -25,12 +28,14 @@ namespace TeamSports.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
+        SpreadsheetsResource.ValuesResource _googleSheetValues;
 
         TeamDAL _dal = new TeamDAL();
         BasicUtilities _basicUtilities = new BasicUtilities();
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, GoogleSheetsHelper googleSheetsHelper)
         {
             _logger = logger;
+            _googleSheetValues = googleSheetsHelper.Service.Spreadsheets.Values;
             // _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         }
 
@@ -40,6 +45,14 @@ namespace TeamSports.Controllers
         {
             return View();
         }
+        [Route("sync-or-download")]
+        public IActionResult sync_or_download()
+        {
+            return View();
+        }
+
+
+
         [Route("brand-file-upload")]
         public IActionResult BRAND_FILE_UPLOAD()
         {
@@ -100,7 +113,9 @@ namespace TeamSports.Controllers
                         conString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" + filePath + ";Extended Properties='Excel 8.0;HDR=YES'";
                         break;
                     case ".xlsx": //Excel 07 and above.
-                        conString = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" + filePath + ";Extended Properties='Excel 8.0;HDR=YES'";
+                        conString = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" + filePath + ";Extended Properties='Excel 12.0;IMEX=1;HDR=NO'";
+                        
+
                         break;
                     case ".csv": //csv.
                         conString = $"Provider=Microsoft.ACE.OLEDB.12.0;Data Source={System.IO.Path.GetDirectoryName(filePath)};Extended Properties='text;HDR=Yes;'";
@@ -121,7 +136,7 @@ namespace TeamSports.Controllers
                         connection.Open();
 
                         // Select all data from the CSV file
-                        string query = $"SELECT * FROM [{System.IO.Path.GetFileName(filePath)}]";
+                        string query = $"SELECT * FROM [{System.IO.Path.GetFileName(filePath)}] ";
 
                         using (OleDbCommand command = new OleDbCommand(query, connection))
                         {
@@ -136,24 +151,99 @@ namespace TeamSports.Controllers
                 else
                 {
 
-                    conString = string.Format(conString, filePath);
-                    using (OleDbConnection connExcel = new OleDbConnection(conString))
-                    {
-                        using (OleDbCommand cmdExcel = new OleDbCommand())
+                    //conString = string.Format(conString, filePath);
+                    //using (OleDbConnection connExcel = new OleDbConnection(conString))
+                    //{
+                    //    using (OleDbCommand cmdExcel = new OleDbCommand())
+                    //    {
+                    //        using (OleDbDataAdapter odaExcel = new OleDbDataAdapter())
+                    //        {
+                    //            cmdExcel.Connection = connExcel;
+                    //            connExcel.Open();
+                    //            DataTable dtExcelSchema;
+                    //            dtExcelSchema = connExcel.GetOleDbSchemaTable(OleDbSchemaGuid.Tables, null);
+                    //            string sheetName = dtExcelSchema.Rows[0]["TABLE_NAME"].ToString();
+                    //            cmdExcel.CommandText = "SELECT * From [" + sheetName + "]";
+
+                    //            string query = "SELECT * From [" + sheetName + "]";
+
+                    //            using (OleDbCommand command = new OleDbCommand(query, connExcel))
+                    //            {
+                    //                using (OleDbDataReader reader = command.ExecuteReader())
+                    //                {
+                    //                    while (reader.Read())
+                    //                    {
+                    //                        for (int i = 0; i < reader.FieldCount; i++)
+                    //                        {
+                    //                            string cellValue = reader[i].ToString();
+                    //                            Console.Write(cellValue + "\t");
+                    //                        }
+                    //                        Console.WriteLine();
+                    //                    }
+                    //                }
+                    //            }
+
+
+
+
+
+
+
+
+
+                    //            odaExcel.SelectCommand = cmdExcel;
+                    //            odaExcel.Fill(dt);
+                    //            connExcel.Close();
+                    //        }
+                    //    }
+                    //}
+
+
+
+
+                    ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+                    using (var package = new ExcelPackage(new FileInfo(filePath)))
+                    { 
+                        ExcelWorksheet worksheet = package.Workbook.Worksheets[0];
+
+                        for (int row = worksheet.Dimension.Start.Row; row <= worksheet.Dimension.End.Row; row++)
                         {
-                            using (OleDbDataAdapter odaExcel = new OleDbDataAdapter())
+                            DataRow newRow = dt.NewRow();
+                            for (int col = worksheet.Dimension.Start.Column; col <= worksheet.Dimension.End.Column; col++)
                             {
-                                cmdExcel.Connection = connExcel;
-                                connExcel.Open();
-                                DataTable dtExcelSchema;
-                                dtExcelSchema = connExcel.GetOleDbSchemaTable(OleDbSchemaGuid.Tables, null);
-                                string sheetName = dtExcelSchema.Rows[0]["TABLE_NAME"].ToString();
-                                cmdExcel.CommandText = "SELECT * From [" + sheetName + "]";
-                                odaExcel.SelectCommand = cmdExcel;
-                                odaExcel.Fill(dt);
-                                connExcel.Close();
+                               
+
+                                if (row == worksheet.Dimension.Start.Row)
+                                {
+                                    string columnHeader = worksheet.Cells[worksheet.Dimension.Start.Row, col].Value.ToString();
+                                    if (dt.Columns.Contains(columnHeader))
+                                    {
+                                        int suffix = 1;
+                                        string newColumnName = columnHeader + "_" + suffix;
+                                        while (dt.Columns.Contains(newColumnName))
+                                        {
+                                            suffix++;
+                                            newColumnName = columnHeader + "_" + suffix;
+                                        }
+                                        columnHeader = newColumnName;
+                                    }
+
+                                    dt.Columns.Add(new DataColumn(columnHeader));
+
+
+                                }
+                                else
+                                {
+                                    // Add data to the DataTable
+                                    newRow[col - 1] = worksheet.Cells[row, col].Value;
+                                }
                             }
-                        }
+                            if (row != worksheet.Dimension.Start.Row)
+                            {
+                                dt.Rows.Add(newRow);
+                            }
+                        } 
                     }
                 }
 
@@ -174,7 +264,7 @@ namespace TeamSports.Controllers
 
                 if (dt.Rows.Count > 0)
                 {
-
+                   
 
                     var cleanedDataTable = new DataTable();
                     var FinalcleanedDataTable = new DataTable();
@@ -330,54 +420,54 @@ namespace TeamSports.Controllers
 
             try
             {
-                resultTable.Columns.Add("BRANDID");
-                resultTable.Columns.Add("BRAND");
-                resultTable.Columns.Add("LINE");
-                resultTable.Columns.Add("PROD_NAME");
-                resultTable.Columns.Add("PROD_NUMBER");
-                resultTable.Columns.Add("UNIFYING_PROD_ID");
-                resultTable.Columns.Add("SEPERATING_PROD_ID");
-                resultTable.Columns.Add("TITLE");
-                resultTable.Columns.Add("PRODUCT_TYPE");
-                resultTable.Columns.Add("PROD_GENDER");
-                resultTable.Columns.Add("EAN");
-                resultTable.Columns.Add("PROD_DESCRIPTION");
-                resultTable.Columns.Add("HTML_BODY");
-                resultTable.Columns.Add("VENDOR");
-                resultTable.Columns.Add("TAGS");
-                resultTable.Columns.Add("PUBLISHED");
-                resultTable.Columns.Add("MANUFACTURER_SIZE_SPECTRUM");
-                resultTable.Columns.Add("STORE_SIZE_SPECTRUM");
-                resultTable.Columns.Add("MANUFAC_COLOR_SPECTRUM_NAMES");
-                resultTable.Columns.Add("MANUFAC_COLOR_SPECTRUM_CODES");
-                resultTable.Columns.Add("STORE_COLOR_SPECTRUM");
-                resultTable.Columns.Add("COLOR_SELECTION");
-                resultTable.Columns.Add("EXTRA_OPT_NAME");
-                resultTable.Columns.Add("EXTRA_OPT_VAL");
-                resultTable.Columns.Add("VERSION_NAME");
-                resultTable.Columns.Add("BASE_PRICE");
-                resultTable.Columns.Add("VARIANT_GRAMS");
-                resultTable.Columns.Add("VARIANT_INV_TRACKER");
-                resultTable.Columns.Add("VARIANT_INV_QTY");
-                resultTable.Columns.Add("VARIANT_INV_POLICY");
-                resultTable.Columns.Add("VARIANT_FULFILLMENT_SERVICE");
-                resultTable.Columns.Add("VARIANT_COMP_AT_PRICE");
-                resultTable.Columns.Add("VARIANT_REQ_SHIPPING");
-                resultTable.Columns.Add("VAR_TAXABLE");
-                resultTable.Columns.Add("VARIANT_BCODE");
-                resultTable.Columns.Add("IMAGE_POSITION");
-                resultTable.Columns.Add("IMAGE_ALT_TXT");
-                resultTable.Columns.Add("GIFT_CARD");
-                resultTable.Columns.Add("SEO_TITLE");
-                resultTable.Columns.Add("VARIANT_IMAGE");
-                resultTable.Columns.Add("VARIANT_WEIGHT_UNIT");
-                resultTable.Columns.Add("VARIANT_TAX_CODE");
-                resultTable.Columns.Add("COST_PER_ITEM");
-                resultTable.Columns.Add("PRICE_INTERNATIONAL");
-                resultTable.Columns.Add("COMP_AT_PRICE_INTL");
-                resultTable.Columns.Add("STATUS");
-                resultTable.Columns.Add("PROD_FILE_NAME");
-                resultTable.Columns.Add("COLOR_NAMES");
+                resultTable.Columns.Add("BRANDID", typeof(Int32));
+                resultTable.Columns.Add("BRAND", typeof(string));
+                resultTable.Columns.Add("LINE", typeof(string));
+                resultTable.Columns.Add("PROD_NAME", typeof(string));
+                resultTable.Columns.Add("PROD_NUMBER", typeof(string));
+                resultTable.Columns.Add("UNIFYING_PROD_ID", typeof(string));
+                resultTable.Columns.Add("SEPERATING_PROD_ID", typeof(string));
+                resultTable.Columns.Add("TITLE", typeof(string));
+                resultTable.Columns.Add("PRODUCT_TYPE", typeof(string));
+                resultTable.Columns.Add("PROD_GENDER", typeof(string));
+                resultTable.Columns.Add("EAN", typeof(string));
+                resultTable.Columns.Add("PROD_DESCRIPTION", typeof(string));
+                resultTable.Columns.Add("HTML_BODY", typeof(string));
+                resultTable.Columns.Add("VENDOR", typeof(string));
+                resultTable.Columns.Add("TAGS", typeof(string));
+                resultTable.Columns.Add("PUBLISHED", typeof(string));
+                resultTable.Columns.Add("MANUFACTURER_SIZE_SPECTRUM", typeof(string));
+                resultTable.Columns.Add("STORE_SIZE_SPECTRUM", typeof(string));
+                resultTable.Columns.Add("MANUFAC_COLOR_SPECTRUM_NAMES", typeof(string));
+                resultTable.Columns.Add("MANUFAC_COLOR_SPECTRUM_CODES", typeof(string));
+                resultTable.Columns.Add("STORE_COLOR_SPECTRUM", typeof(string));
+                resultTable.Columns.Add("COLOR_SELECTION", typeof(string));
+                resultTable.Columns.Add("EXTRA_OPT_NAME", typeof(string));
+                resultTable.Columns.Add("EXTRA_OPT_VAL", typeof(string));
+                resultTable.Columns.Add("VERSION_NAME", typeof(string));
+                resultTable.Columns.Add("BASE_PRICE", typeof(string));
+                resultTable.Columns.Add("VARIANT_GRAMS", typeof(string));
+                resultTable.Columns.Add("VARIANT_INV_TRACKER", typeof(string));
+                resultTable.Columns.Add("VARIANT_INV_QTY", typeof(string));
+                resultTable.Columns.Add("VARIANT_INV_POLICY", typeof(string));
+                resultTable.Columns.Add("VARIANT_FULFILLMENT_SERVICE", typeof(string));
+                resultTable.Columns.Add("VARIANT_COMP_AT_PRICE", typeof(string));
+                resultTable.Columns.Add("VARIANT_REQ_SHIPPING", typeof(string));
+                resultTable.Columns.Add("VAR_TAXABLE", typeof(string));
+                resultTable.Columns.Add("VARIANT_BCODE", typeof(string));
+                resultTable.Columns.Add("IMAGE_POSITION", typeof(string));
+                resultTable.Columns.Add("IMAGE_ALT_TXT", typeof(string));
+                resultTable.Columns.Add("GIFT_CARD", typeof(string));
+                resultTable.Columns.Add("SEO_TITLE", typeof(string));
+                resultTable.Columns.Add("VARIANT_IMAGE", typeof(string));
+                resultTable.Columns.Add("VARIANT_WEIGHT_UNIT", typeof(string));
+                resultTable.Columns.Add("VARIANT_TAX_CODE", typeof(string));
+                resultTable.Columns.Add("COST_PER_ITEM", typeof(string));
+                resultTable.Columns.Add("PRICE_INTERNATIONAL", typeof(string));
+                resultTable.Columns.Add("COMP_AT_PRICE_INTL", typeof(string));
+                resultTable.Columns.Add("STATUS", typeof(string));
+                resultTable.Columns.Add("PROD_FILE_NAME", typeof(string));
+                resultTable.Columns.Add("COLOR_NAMES", typeof(string));
 
                 //dataTable = dt.AsEnumerable()
                 //     .OrderBy(row => row.Field<string>("ProductNumber"))
@@ -388,10 +478,10 @@ namespace TeamSports.Controllers
 
                 if (vBrandName.ToLower() == "nike" || vBrandName.ToLower() == "jako" || vBrandName.ToLower() == "puma")
                 {
-                    dataTable.Columns.Add("colorcode");
+                    dataTable.Columns.Add("colorcode", typeof(string));
                     foreach (DataRow r in dataTable.Rows)
                     {
-                       string colorcode= r["ProductNumber"].ToString().Trim().Contains('-') ? r["ProductNumber"].ToString().Trim().Split('-')[1] : "0";
+                        string colorcode = r["ProductNumber"].ToString().Trim().Contains('-') ? r["ProductNumber"].ToString().Trim().Split('-')[1] : "0";
                         string productname = r["ProductNumber"].ToString().Trim().Contains('-') ? r["ProductNumber"].ToString().Trim().Split('-')[0] : r["ProductNumber"].ToString().Trim();
                         r["ProductNumber"] = productname;
                         r["colorcode"] = colorcode;
@@ -424,17 +514,18 @@ namespace TeamSports.Controllers
 
 
                     DataTable EAN_DB_DATA = new DataTable();
-                    EAN_DB_DATA.Columns.Add("BRAND_ID");
-                    EAN_DB_DATA.Columns.Add("BRAND_NAME");
-                    EAN_DB_DATA.Columns.Add("PRODUCT_NAME");
-                    EAN_DB_DATA.Columns.Add("PRODUCT_NUMBER");
-                    EAN_DB_DATA.Columns.Add("PRODUCT_GENDER");
-                    EAN_DB_DATA.Columns.Add("PRICE_UVP");
-                    EAN_DB_DATA.Columns.Add("EAN");
-                    EAN_DB_DATA.Columns.Add("SIZE");
-                    EAN_DB_DATA.Columns.Add("COLOR_CODE");
-                    EAN_DB_DATA.Columns.Add("COLOR_NAME");
-                    EAN_DB_DATA.Columns.Add("IMAGE_URL"); EAN_DB_DATA.Columns.Add("STATUS");
+                    EAN_DB_DATA.Columns.Add("BRAND_ID", typeof(string));
+                    EAN_DB_DATA.Columns.Add("BRAND_NAME", typeof(string));
+                    EAN_DB_DATA.Columns.Add("PRODUCT_NAME", typeof(string));
+                    EAN_DB_DATA.Columns.Add("PRODUCT_NUMBER", typeof(string));
+                    EAN_DB_DATA.Columns.Add("PRODUCT_GENDER", typeof(string));
+                    EAN_DB_DATA.Columns.Add("PRICE_UVP", typeof(string));
+                    EAN_DB_DATA.Columns.Add("EAN", typeof(string));
+                    EAN_DB_DATA.Columns.Add("SIZE", typeof(string));
+                    EAN_DB_DATA.Columns.Add("COLOR_CODE", typeof(string));
+                    EAN_DB_DATA.Columns.Add("COLOR_NAME", typeof(string));
+                    EAN_DB_DATA.Columns.Add("IMAGE_URL", typeof(string));
+                    EAN_DB_DATA.Columns.Add("STATUS", typeof(string));
                     string ProdName = string.Empty;
                     string Prodnumber = string.Empty;
 
@@ -460,11 +551,11 @@ namespace TeamSports.Controllers
                         newRow["PRODUCT_NUMBER"] = PROD_NUMBER;
                         newRow["PRODUCT_GENDER"] = GenderMapping(row["Gender"].ToString());
                         newRow["PRICE_UVP"] = row["Price"].ToString().Trim()?.Replace('.', ',');
-                        newRow["EAN"] = row["EAN"];
-                        newRow["SIZE"] = row["Size"];
+                        newRow["EAN"] = row["EAN"].ToString();
+                        newRow["SIZE"] = row["Size"].ToString();
                         newRow["COLOR_CODE"] = ColorCode;
                         newRow["COLOR_NAME"] = replaceGermanUmlauts(row["Color"].ToString());
-                        newRow["IMAGE_URL"] = row["Images"];
+                        newRow["IMAGE_URL"] = row["Images"].ToString();
                         newRow["STATUS"] = 0;
                         EAN_DB_DATA.Rows.Add(newRow);
                     }
@@ -506,7 +597,7 @@ namespace TeamSports.Controllers
 
                         DataRow newRow = resultTable.NewRow();
 
-                        newRow["BRANDID"] = vBrandID;
+                        newRow["BRANDID"] = vBrandID.Trim().Replace(" ", "");
                         newRow["EAN"] = item.EAN.ToString().Trim();
                         newRow["BRAND"] = vBrandName;
                         newRow["LINE"] = "".ToString().Trim();
@@ -525,7 +616,7 @@ namespace TeamSports.Controllers
                         newRow["TITLE"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
                         newRow["PRODUCT_TYPE"] = "".ToString().Trim();
                         newRow["PROD_GENDER"] = gender.Trim();
-                        newRow["PROD_DESCRIPTION"] = replaceGermanUmlauts(Regex.Replace(item.DESCRIPTION.Split("#")[0].ToString().Trim(), expression, " ").Trim());
+                        newRow["PROD_DESCRIPTION"] = replaceGermanUmlauts(item.DESCRIPTION.Split("#")[0].ToString().Trim());
                         newRow["HTML_BODY"] = "".ToString().Trim();
                         newRow["VENDOR"] = "".ToString().Trim();
                         newRow["TAGS"] = "".ToString().Trim();
@@ -638,11 +729,11 @@ namespace TeamSports.Controllers
                         newRow["PRODUCT_NUMBER"] = PROD_NUMBER;
                         newRow["PRODUCT_GENDER"] = GenderMapping(row["Gender"].ToString());
                         newRow["PRICE_UVP"] = row["Price"].ToString().Trim()?.Replace('.', ',');
-                        newRow["EAN"] = row["EAN"];
-                        newRow["SIZE"] = row["Size"];
+                        newRow["EAN"] = row["EAN"].ToString();
+                        newRow["SIZE"] = row["Size"].ToString();
                         newRow["COLOR_CODE"] = ColorCode;
                         newRow["COLOR_NAME"] = replaceGermanUmlauts(row["Color"].ToString());
-                        newRow["IMAGE_URL"] = row["Images"];
+                        newRow["IMAGE_URL"] = row["Images"].ToString();
                         newRow["STATUS"] = 0;
                         EAN_DB_DATA.Rows.Add(newRow);
                     }
@@ -684,7 +775,7 @@ namespace TeamSports.Controllers
 
                         DataRow newRow = resultTable.NewRow();
 
-                        newRow["BRANDID"] = vBrandID;
+                        newRow["BRANDID"] = vBrandID.Trim().Replace(" ", "");
                         newRow["EAN"] = item.EAN.ToString().Trim();
                         newRow["BRAND"] = vBrandName;
                         newRow["LINE"] = "".ToString().Trim();
@@ -703,7 +794,7 @@ namespace TeamSports.Controllers
                         newRow["TITLE"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
                         newRow["PRODUCT_TYPE"] = "".ToString().Trim();
                         newRow["PROD_GENDER"] = gender.Trim();
-                        newRow["PROD_DESCRIPTION"] = replaceGermanUmlauts(Regex.Replace(item.DESCRIPTION.Split("#")[0].ToString().Trim(), expression, " ").Trim());
+                        newRow["PROD_DESCRIPTION"] = replaceGermanUmlauts(item.DESCRIPTION.Split("#")[0].ToString().Trim());
                         newRow["HTML_BODY"] = "".ToString().Trim();
                         newRow["VENDOR"] = "".ToString().Trim();
                         newRow["TAGS"] = "".ToString().Trim();
@@ -755,7 +846,7 @@ namespace TeamSports.Controllers
                 }
 
 
-               
+
                 dataTable = resultTable;
             }
             catch (Exception e)
@@ -895,7 +986,7 @@ namespace TeamSports.Controllers
                     newRow["COLOR_CODE"] = row["ColorCode"];
                     newRow["COLOR_NAME"] = replaceGermanUmlauts(row["lookupColorName"].ToString());
                     Uri uriResult;
-                    string uriName = row["DigizuitePackshot"].ToString();
+                    string uriName = row["DigizuitePackshot1"].ToString();
                     //bool result = Uri.TryCreate(uriName, UriKind.Absolute, out uriResult) && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
                     newRow["IMAGE_URL"] = uriName;
                     EAN_DB_DATA.Rows.Add(newRow);
@@ -935,19 +1026,23 @@ namespace TeamSports.Controllers
                     if (item.BASE_PRICE.ToString().Trim() == "" || item.BASE_PRICE.ToString().Trim() == "0") continue;
                     DataRow newRow = resultTable.NewRow();
 
-                    newRow["BRANDID"] = vBrandID;
+                    newRow["BRANDID"] = vBrandID.Trim().Replace(" ", "");
                     newRow["EAN"] = item.EAN.ToString().Trim();
-                    newRow["BRAND"] = vBrandName;
+                    newRow["BRAND"] = vBrandName.TrimEnd();
                     newRow["LINE"] = "".ToString().Trim();
-                    newRow["PROD_NAME"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
+                    newRow["PROD_NAME"] = replaceGermanUmlauts(item.PROD_NAME.Split("#")[0].ToString().Trim());
                     newRow["PROD_NUMBER"] = item.PROD_NUMBER.ToString().Trim();
                     newRow["UNIFYING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim();
-                    newRow["TITLE"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
+                    newRow["TITLE"] = replaceGermanUmlauts(item.PROD_NAME.Split("#")[0].ToString().Trim());
                     string gender = GenderMapping(item.GENDER.ToString());
                     newRow["SEPERATING_PROD_ID"] = gender.Trim().Length > 0 ? item.PROD_NUMBER.ToString().Trim() + " - " + gender.Trim() : item.PROD_NUMBER.ToString().Trim();
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
                     newRow["PROD_GENDER"] = gender.Trim();
-                    newRow["PROD_DESCRIPTION"] = replaceGermanUmlauts(item.DESCRIPTION.Split("#")[0].ToString().Trim());
+                    string description = "<ul><li>" + replaceGermanUmlauts(item.DESCRIPTION.Split("#")[0].ToString().Trim()).Replace(";", "</li><li>") + "</li></ul>";
+                    description = description.Replace("<li></li>", "");
+                    description = description.Replace("<ul></ul>", "");
+
+                    newRow["PROD_DESCRIPTION"] = description;
                     newRow["HTML_BODY"] = "".ToString().Trim();
                     newRow["VENDOR"] = "".ToString().Trim();
                     newRow["TAGS"] = "".ToString().Trim();
@@ -987,7 +1082,7 @@ namespace TeamSports.Controllers
                                     item.DigizuitePackshot6?.ToString().Trim().TrimEnd(',')
                                 };
 
-                    newRow["VARIANT_IMAGE"] = "";
+                    newRow["VARIANT_IMAGE"] = item.DigizuitePackshot1.ToString().Trim();
                     newRow["VARIANT_WEIGHT_UNIT"] = "".ToString().Trim();
                     newRow["VARIANT_TAX_CODE"] = "".ToString().Trim();
                     newRow["COST_PER_ITEM"] = "".ToString().Trim();
@@ -1083,14 +1178,13 @@ namespace TeamSports.Controllers
                 dataTable = SortDataTable(dt, "Artikelnummer", "Groesse", "FarbeDE");
 
                 var groupedData = from row in dataTable.AsEnumerable()
-                                  group row by new { PROD_NUMBER = row["Artikelnummer"], LINE = row["Linie"], TYPE = row["ProduktartDE"], BASE_PRICE = row["DEEmpfVKEUR"], GENDER = GenderMapping(row["ZielgruppeDE"].ToString()), DESCRIPTION = row["MarketingtextundUSPsDE"] } into grp
+                                  group row by new { PROD_NUMBER = row["Artikelnummer"], TYPE = row["ProduktartDE"], BASE_PRICE = row["DEEmpfVKEUR"], GENDER = GenderMapping(row["ZielgruppeDE"].ToString()), DESCRIPTION = row["MarketingtextundUSPsDE"] } into grp
                                   select new
                                   {
                                       PROD_NAME = string.Join("#", grp.Select(r => r["ArtikelnameDE"]).Distinct()),
                                       DESCRIPTION = string.Join("#", grp.Select(r => r["MarketingtextundUSPsDE"]).Distinct()),
                                       PROD_NUMBER = grp.Key.PROD_NUMBER,
                                       TYPE = grp.Key.TYPE,
-                                      LINE = grp.Key.LINE,
                                       GENDER = grp.Key.GENDER,
                                       BASE_PRICE = grp.Key.BASE_PRICE,
                                       EAN = string.Join(";", grp.Select(r => r["EANCode"]).Distinct()),
@@ -1193,17 +1287,17 @@ namespace TeamSports.Controllers
 
                     DataRow newRow = resultTable.NewRow();
 
-                    newRow["BRANDID"] = vBrandID;
+                    newRow["BRANDID"] = vBrandID.Trim().Replace(" ", "");
                     newRow["EAN"] = item.EAN.ToString().Trim();
                     newRow["BRAND"] = vBrandName;
-                    newRow["LINE"] = item.LINE.ToString().Trim();
-                    newRow["PROD_NAME"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
+                    newRow["LINE"] = "".ToString().Trim();
+                    newRow["PROD_NAME"] = replaceGermanUmlauts(item.PROD_NAME.Split("#")[0].ToString().Trim());
                     newRow["PROD_NUMBER"] = "E" + item.PROD_NUMBER.ToString().Trim();
                     newRow["UNIFYING_PROD_ID"] = "E" + item.PROD_NUMBER.ToString().Trim();
 
                     string gender = GenderMapping(item.GENDER.ToString());
                     newRow["SEPERATING_PROD_ID"] = gender.Trim().Length > 0 ? "E" + item.PROD_NUMBER.ToString().Trim() + " - " + gender.Trim() : "E" + item.PROD_NUMBER.ToString().Trim();
-                    newRow["TITLE"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
+                    newRow["TITLE"] = replaceGermanUmlauts(item.PROD_NAME.Split("#")[0].ToString().Trim());
                     newRow["PRODUCT_TYPE"] = item.TYPE.ToString().Trim();
                     newRow["PROD_GENDER"] = gender.Trim();
                     newRow["PROD_DESCRIPTION"] = replaceGermanUmlauts(item.DESCRIPTION.Split("#")[0].ToString().Trim());
@@ -1359,7 +1453,7 @@ namespace TeamSports.Controllers
             catch (Exception e)
             {
                 Console.WriteLine(e);
-                return new DataTable();
+                return dt;
             }
 
 
@@ -1466,7 +1560,7 @@ namespace TeamSports.Controllers
                     newRow["PRODUCT_GENDER"] = GenderMapping(row["GENDER"].ToString());
                     newRow["PRICE_UVP"] = row["UVP"].ToString().Trim()?.Replace('.', ',');
                     newRow["EAN"] = row["EAN"];
-                    newRow["SIZE"] = row["SIZE"];
+                    newRow["SIZE"] = row["SizeDescription"];
                     newRow["COLOR_CODE"] = row["ColorCode"];
                     newRow["COLOR_NAME"] = replaceGermanUmlauts(row["ColorDescription"].ToString());
                     newRow["IMAGE_URL"] = "";
@@ -1521,16 +1615,16 @@ namespace TeamSports.Controllers
 
 
                 var groupedData = from row in dataTable.AsEnumerable()
-                                  group row by new { PROD_NUMBER = row["ItemNo"], BASE_PRICE = row["UVP"], GENDER = GenderMapping(row["GENDER"].ToString()), N = row["recommendedUVP"], M = row["PriceIndividual"], O = row["Text1"], P = row["Text2"], Q = row["Text3"], R = row["Text4"], S = row["Text5"] } into grp
+                                  group row by new { PROD_NUMBER = row["ItemNo"], BASE_PRICE = row["UVP"], GENDER = GenderMapping(row["GENDER"].ToString()) } into grp
                                   select new
                                   {
                                       PROD_NAME = string.Join("#", grp.Select(r => r["Description"]).Distinct()),
-                                      DESCRIPTION = string.Join("#", grp.Select(r => r["recommendedUVP"].ToString() + r["PriceIndividual"].ToString() + r["Text1"].ToString() + r["Text2"].ToString() + r["Text3"].ToString() + r["Text4"].ToString() + r["Text5"].ToString()).Distinct()),
+                                      DESCRIPTION = string.Join("#", grp.Select(r => "<li>" + r["Text1"].ToString() + "</li>" + "<li>" + r["Text2"].ToString() + "</li>" + "<li>" + r["Text3"].ToString() + "</li>" + "<li>" + r["Text4"].ToString() + "</li>" + "<li>" + r["Text5"].ToString() + "</li>" + "<li>" + r["Text6"].ToString() + "</li>" + "<li>" + r["Text7"].ToString() + "</li>").Distinct()),
                                       PROD_NUMBER = grp.Key.PROD_NUMBER,
                                       GENDER = grp.Key.GENDER,
                                       BASE_PRICE = grp.Key.BASE_PRICE,
                                       EAN = string.Join(";", grp.Select(r => r["EAN"]).Distinct()),
-                                      SIZE = string.Join(";", grp.Select(r => r["SIZE"]).Distinct()),
+                                      SIZE = string.Join(";", grp.Select(r => r["SizeDescription"]).Distinct()),
                                       COLORCODE = string.Join(";", grp.Select(r => r["ColorCode"]).Distinct()),
                                       COLORNAME = string.Join(";", grp.Select(r => r["ColorDescription"]).Distinct())
                                   };
@@ -1543,19 +1637,22 @@ namespace TeamSports.Controllers
                     if (item.BASE_PRICE.ToString().Trim() == "0" || item.BASE_PRICE.ToString().Trim() == "") continue;
 
                     DataRow newRow = resultTable.NewRow();
-                    newRow["BRANDID"] = vBrandID;
+                    string description = "<ul>" + replaceGermanUmlauts(item.DESCRIPTION.Split("#")[0].ToString().Trim()) + "</ul>";
+                    description = description.Replace("<li></li>", "");
+                    description = description.Replace("<ul></ul>", "");
+                    newRow["BRANDID"] = vBrandID.Trim().Replace(" ", "");
                     newRow["EAN"] = item.EAN.ToString().Trim();
                     newRow["BRAND"] = vBrandName;
                     newRow["LINE"] = "";
-                    newRow["PROD_NAME"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
+                    newRow["PROD_NAME"] = replaceGermanUmlauts(item.PROD_NAME.Split("#")[0].ToString().Trim());
                     newRow["PROD_NUMBER"] = item.PROD_NUMBER.ToString().Trim();
                     newRow["UNIFYING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim();
                     string gender = GenderMapping(item.GENDER.ToString());
                     newRow["SEPERATING_PROD_ID"] = gender.Trim().Length > 0 ? item.PROD_NUMBER.ToString().Trim() + " - " + gender.Trim() : item.PROD_NUMBER.ToString().Trim();
-                    newRow["TITLE"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
+                    newRow["TITLE"] = replaceGermanUmlauts(item.PROD_NAME.Split("#")[0].ToString().Trim());
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
                     newRow["PROD_GENDER"] = gender.Trim();
-                    newRow["PROD_DESCRIPTION"] = replaceGermanUmlauts(item.DESCRIPTION.Split("#")[0].ToString().Trim());
+                    newRow["PROD_DESCRIPTION"] = description;
                     newRow["HTML_BODY"] = "".ToString().Trim();
                     newRow["VENDOR"] = "".ToString().Trim();
                     newRow["TAGS"] = "".ToString().Trim();
@@ -1758,12 +1855,12 @@ namespace TeamSports.Controllers
                 }
 
                 var groupedData = from row in dataTable.AsEnumerable()
-                                  group row by new { PROD_NAME = row["STYLE_NAME"], PROD_NUMBER = row["STYLE"], TITLE = row["STYLE_NAME"], BASE_PRICE = row["UVP_DE"], GENDER = GenderMapping(row["GENDER"].ToString()), PRODUCT_DIVISION = row["PRODUCT_DIVISION"] } into grp
+                                  group row by new { PROD_NUMBER = row["STYLE"], BASE_PRICE = row["UVP_DE"], GENDER = GenderMapping(row["GENDER"].ToString()), PRODUCT_DIVISION = row["PRODUCT_DIVISION"] } into grp
                                   select new
                                   {
                                       PROD_NAME = string.Join("#", grp.Select(r => r["STYLE_NAME"]).Distinct()),
                                       PROD_NUMBER = grp.Key.PROD_NUMBER,
-                                      TITLE = grp.Key.TITLE,
+                                      TITLE = string.Join("#", grp.Select(r => r["STYLE_NAME"]).Distinct()),
                                       GENDER = grp.Key.GENDER,
                                       PRODUCT_DIVISION = grp.Key.PRODUCT_DIVISION,
                                       BASE_PRICE = grp.Key.BASE_PRICE,
@@ -1782,16 +1879,16 @@ namespace TeamSports.Controllers
 
                     DataRow newRow = resultTable.NewRow();
 
-                    newRow["BRANDID"] = vBrandID;
+                    newRow["BRANDID"] = vBrandID.Trim().Replace(" ", "");
                     newRow["EAN"] = item.EAN.ToString().Trim();
-                    newRow["BRAND"] = vBrandName;
+                    newRow["BRAND"] = vBrandName.Trim().Replace(" ", ""); ;
                     newRow["LINE"] = "";
-                    newRow["PROD_NAME"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
+                    newRow["PROD_NAME"] = replaceGermanUmlauts(item.PROD_NAME.Split("#")[0].ToString().Trim());
                     newRow["PROD_NUMBER"] = item.PROD_NUMBER.ToString().Trim();
                     newRow["UNIFYING_PROD_ID"] = item.PROD_NUMBER.ToString().Trim();
                     string gender = GenderMapping(item.GENDER.ToString().Trim());
                     newRow["SEPERATING_PROD_ID"] = gender.ToString().Trim().Length > 0 ? item.PROD_NUMBER.ToString().Trim() + " - " + gender : item.PROD_NUMBER.ToString().Trim();
-                    newRow["TITLE"] = item.PROD_NAME.Split("#")[0].ToString().Trim();
+                    newRow["TITLE"] = replaceGermanUmlauts(item.PROD_NAME.Split("#")[0].ToString().Trim());
                     newRow["PRODUCT_TYPE"] = "".ToString().Trim();
                     newRow["PROD_GENDER"] = gender.Trim();
                     newRow["PROD_DESCRIPTION"] = "".ToString().Trim();
@@ -2127,38 +2224,39 @@ namespace TeamSports.Controllers
 
 
 
-        [HttpPost]
         public async Task<bool> PUSH_MAINDB(string _BRAND_NAME, string _BRAND_ID, string _OP)
         {
             DataTable DT_DB_DATA = _dal.GET_DB_DATA(1);
             DataTable newData = DT_DB_DATA;
             newData.Columns.Remove("EAN");
             newData.Columns.Remove("BRANDID");
-            bool output = await UploadDataToSheet(newData, _BRAND_NAME, _OP);
+            //  bool output = await UploadDataToSheet(newData, _BRAND_NAME, _OP);
+            bool output = true;
             int i = _dal.INSERT_DATA(_OP);
 
-            DataTable EAN_DATA = _dal.GET_EANDB_DATA(_BRAND_ID);
+            /*  DataTable EAN_DATA = _dal.GET_EANDB_DATA(_BRAND_ID);
 
-            bool ClearEAN = true;
+              bool ClearEAN = true;
 
-            DataTable temp_dt = EAN_DATA;
-            int fixediteration = 12000;
-            int maxcount = temp_dt.Rows.Count;
-            int skip = 0;
-            bool output2 = false;
-            while (skip < maxcount)
-            {
+              DataTable temp_dt = EAN_DATA;
+              int fixediteration = 12000;
+              int maxcount = temp_dt.Rows.Count;
+              int skip = 0;*/
+            bool output2 = true;
+            /*    while (skip < maxcount)
+                {
 
-                DataTable dt = EAN_DATA.AsEnumerable().Skip(skip).Take(fixediteration).CopyToDataTable();
-                skip += fixediteration;
-                output2 = await UploadDataToEANSheet(dt, _BRAND_NAME, _OP, ClearEAN);
-                ClearEAN = false;
+                    DataTable dt = EAN_DATA.AsEnumerable().Skip(skip).Take(fixediteration).CopyToDataTable();
+                    skip += fixediteration;
+                    output2 = await UploadDataToEANSheet(dt, _BRAND_NAME, _OP, ClearEAN);
+                    ClearEAN = false;
 
-                Thread.Sleep(1000);
-            }
+                    await Task.Delay(2000);
+
+                }*/
             if (output2)
             {
-                int d = _dal.UPDATE_EAN_DATA(_BRAND_ID);
+                int d = _dal.UPDATE_EAN_DATA(_BRAND_ID, _OP);
             }
             return output;
         }
@@ -2169,7 +2267,22 @@ namespace TeamSports.Controllers
             int output = _dal.DISCARD_TEMP_DB(brandID, type);
             return Json(output);
         }
+        [HttpPost]
+        public async Task<JsonResult> GET_ALL_SUMMERY_DATA()
+        {
+            try
+            {
+                DataTable dt = await _dal.GET_ALL_SUMMERY_DATA();
+                List<Dictionary<string, object>> lst = _basicUtilities.GetTableRows(dt);
 
+                return Json(lst);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return Json(false);
+            }
+        }
         [HttpPost]
         public JsonResult ADD_SINGLE_ARTICLE(string _BrandID, string _BrandName, string _Price, string _Size, string _Colors, string _Gender
             , string _Ean, string _Article, string _ArticleName)
@@ -2386,6 +2499,71 @@ namespace TeamSports.Controllers
 
 
 
+        public async Task<IActionResult> test()
+
+        {
+            string scriptDeploymentId = "AKfycbx5_PaXCxl27K8kU6V9JWTo8xANGN_zIuCZa2-MXZoGQLGRg6a9f6tAfC5sAEpJkHYE";
+            string apiKey = "AIzaSyBNW1DLf5Mt8TZF_anHxGYKewCOOvQoKEE"; // Or use OAuth for more secure authentication
+
+            string data = "your data here"; // Replace with your actual data
+
+            string apiUrl = $"https://script.googleapis.com/v1/scripts/{scriptDeploymentId}:run?fields=runTime";
+            string apiKeyParam = $"&key={apiKey}";
+
+            using (var httpClient = new HttpClient())
+            {
+                var response = await httpClient.PostAsync(apiUrl + apiKeyParam, new StringContent($"{{ \"function\": \"SetData\", \"parameters\": [\"{data}\"] }}"));
+                var result = await response.Content.ReadAsStringAsync();
+                // Handle the result as needed
+            }
+            return NoContent();
+        }
+
+        [HttpPost]
+        public async Task<JsonResult> DeleteAllData()
+        {
+            try
+            {
+                var config = _basicUtilities.GetConfiguration();
+                string spreadsheetId = config.GetSection("SpreadSheetID").Value.ToString();
+                string SheetName = config.GetSection("SheetName").Value.ToString();
+
+                var range = $"{SheetName}!A{3}:AZ";
+                var requestBody = new ClearValuesRequest();
+                var deleteRequest = _googleSheetValues.Clear(requestBody, spreadsheetId, range);
+                await deleteRequest.ExecuteAsync();
+
+                spreadsheetId = config.GetSection("EanSpreadSheetID").Value.ToString();
+                SheetName = config.GetSection("EanSheetName").Value.ToString();
+                range = $"{SheetName}!A{2}:J";
+                requestBody = new ClearValuesRequest();
+                deleteRequest = _googleSheetValues.Clear(requestBody, spreadsheetId, range);
+                await deleteRequest.ExecuteAsync();
+
+                int i = await _dal.TruncateAllData();
+                return Json(true);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return Json(false);
+            }
+
+
+        }
+
+        public async Task<bool> Get(string spreadsheetId, string SheetName)
+        {
+            var range = $"{SheetName}!A{3}:AZ{10}";
+            var request = _googleSheetValues.Get(spreadsheetId, range);
+            var response = request.Execute();
+            var values = response.Values;
+            if (values.Count > 0)
+            {
+                return false;
+            }
+            return true;
+        }
 
 
 
@@ -2393,6 +2571,79 @@ namespace TeamSports.Controllers
 
 
 
+
+
+
+
+
+        [HttpGet]
+        public async Task<ActionResult> GetData(string brand, string filetype)
+        {
+            try
+            {
+                DataTable dataTable = await _dal.GetData(brand, filetype);
+                DateTime DateTime = DateTime.Now;
+                string RequestDateTime = DateTime.ToString("yyyyMMddHHmmss");
+
+                string fileName = brand + "_" + filetype + "_"+ RequestDateTime + ".xlsx";
+                ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+                using (var package = new ExcelPackage())
+                {
+                    var worksheet = package.Workbook.Worksheets.Add("Data");
+
+                    // Add data to Excel sheet
+                    worksheet.Cells.LoadFromDataTable(dataTable, true);
+
+                    // Prepare memory stream to store the Excel file
+                    using (var stream = new MemoryStream())
+                    {
+                        package.SaveAs(stream);
+                        stream.Seek(0, SeekOrigin.Begin);
+
+                        // Provide the Excel file as a downloadable attachment
+                        return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+                    }
+                }
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return NoContent();
+            }
+        }
+
+
+
+
+
+
+
+        private byte[] DataTableToExcel(DataTable dataTable)
+        {
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            using (ExcelPackage excelPackage = new ExcelPackage())
+            {
+                ExcelWorksheet worksheet = excelPackage.Workbook.Worksheets.Add("Sheet1");
+
+                // Load data into Excel worksheet
+                for (int i = 0; i < dataTable.Columns.Count; i++)
+                {
+                    worksheet.Cells[1, i + 1].Value = dataTable.Columns[i].ColumnName;
+                }
+
+                for (int i = 0; i < dataTable.Rows.Count; i++)
+                {
+                    for (int j = 0; j < dataTable.Columns.Count; j++)
+                    {
+                        worksheet.Cells[i + 2, j + 1].Value = dataTable.Rows[i][j];
+                    }
+                }
+
+                // Convert Excel package to byte array
+                return excelPackage.GetAsByteArray();
+            }
+        }
 
     }
 }

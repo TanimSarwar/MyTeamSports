@@ -1,0 +1,83 @@
+﻿@{
+    ViewData["Title"] = "Download data or Sync with google sheet";
+}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css" />
+
+<div class="card card-custom gutter-b example example-compact" id="PUSHTODB">
+    <div class="card-header">
+        <h3 class="card-title" id="brandName">Summery Data  <a onclick=Get_All_Data() class="btn btn-sm btn-icon btn-bg-light btn-icon-success btn-hover-success" title="Reload"><i class="menu-icon flaticon2-reload"></i></a></h3>
+    </div> 
+    <div class="card-body">
+        <table id="data" class="table table-bordered" cellspacing="0">
+            <thead>
+                <tr>
+                    <th style='text-align:center;'>#</th>
+                    <th style='text-align:center;'>Brand</th>
+                    <th style='text-align:center;'>Product Count <a onclick=downloadFile('All','product') class="btn btn-sm btn-icon btn-bg-light btn-icon-warning btn-hover-warning" title="Download All Product Data"><i class="menu-icon flaticon2-download"></i></a></th>
+                    <th style='text-align:center;'>EAN Count  <a onclick=downloadFile('All','ean') class="btn btn-sm btn-icon btn-bg-light btn-icon-info btn-hover-info" title="Download All EAN Data"><i class="menu-icon flaticon2-download"></i></a></th>
+                    <th style='text-align:center;'>Download</th>
+                    <th style='text-align:center;'>Google Sheet Sync</th>
+                </tr>
+            </thead>
+            <tbody id="databody"></tbody>
+        </table>
+    </div>
+  
+</div>
+
+ 
+<script src="assets/plugins/global/plugins.bundle.js"></script>
+<script src="assets/js/scripts.bundle.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+
+<script src="assets/js/pages/crud/forms/widgets/select2.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+
+
+
+<script>
+    $(document).ready(function () {
+        Get_All_Data();
+
+    });
+
+    const Get_All_Data = () => {
+        swal.showLoading();
+        $.ajax({
+            url: "/Home/GET_ALL_SUMMERY_DATA",
+            type: "POST",
+            dataType: "json",
+            success: function (response) {
+                swal.close();
+               console.log(response)
+
+                if (response != false) {
+                    $("#databody").empty();
+                    // new DataTable('#data').clear();
+                    // new DataTable('#data').destroy();
+                    var resultBody = "";
+
+
+                    for (var i = 0; i < response.length; i++) {
+                        resultBody += "<tr>";
+                        resultBody += "<td style='text-align:center;'>" + (i + 1) + "</td>";
+                        resultBody += "<td style='text-align:center;'>" + response[i]?.BRAND_NAME + "</td>";
+                        resultBody += "<td style='text-align:center;'>" + response[i]?.PROD_COUNT + "</td>";
+                        resultBody += "<td style='text-align:center;'>" + response[i]?.EAN_COUNT + "</td>";
+                        resultBody += "<td style='text-align:center;'> <a onclick=downloadFile('" + response[i]?.BRAND_NAME + "','product') class=\"btn btn-sm btn-icon btn-bg-light btn-icon-warning btn-hover-warning\" title=\"Download Product Data of " + response[i]?.BRAND_NAME + "\"><i class=\"menu-icon flaticon2-download\"></i></a> <a  onclick=downloadFile('" + response[i]?.BRAND_NAME + "','ean') class=\"btn btn-sm btn-icon btn-bg-light btn-icon-info btn-hover-info\" title=\"Download EAN Data of " + response[i]?.BRAND_NAME + "\"><i class=\"menu-icon flaticon2-download\"></i></a></td>";
+                        resultBody += "<td style='text-align:center;'> <a class=\"btn btn-sm btn-icon btn-bg-light btn-icon-warning btn-hover-warning\" title=\"Sync with google sheet\"><i class=\"menu-icon flaticon2-download\"></i></a></td>";
+                        resultBody += "</tr>";
+                    }
+                    $("#databody").html(resultBody);
+                    // new DataTable('#data')  
+                }
+            }
+        });
+    }
+    const downloadFile = (brand, filetype) => {
+        window.location.href = "../../home/getdata?brand=" + brand + "&filetype=" + filetype;
+    }
+</script>

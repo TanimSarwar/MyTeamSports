@@ -139,7 +139,52 @@ namespace TeamSports.DAL
                 dt.Dispose();
             }
         }
+        public async Task<DataTable> GET_ALL_SUMMERY_DATA( )
+        {
+            DataTable dt = new DataTable();
+            try
+            {
+                using (SqlConnection con = new SqlConnection(BasicUtilities.GetConnectionString()))
+                {
+                  await con.OpenAsync();
+                    SqlCommand cmd = new SqlCommand("GET_ALL_SUMMERY_DATA", con);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.CommandTimeout = 500; 
+                    SqlDataAdapter adpt = new SqlDataAdapter(cmd);
+                    adpt.Fill(dt);
+                }
+                return dt;
+            }
+            finally
+            {
+                dt.Dispose();
+            }
+        }
 
+        public async Task<DataTable> GetData(string brand, string filetype)
+        {
+            DataTable dt = new DataTable();
+            try
+            {
+                using (SqlConnection con = new SqlConnection(BasicUtilities.GetConnectionString()))
+                {
+                    await con.OpenAsync();
+                    SqlCommand cmd = new SqlCommand("GetData", con);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.CommandTimeout = 500;
+                    cmd.Parameters.AddWithValue("@brand", brand);
+                    cmd.Parameters.AddWithValue("@filetype", filetype);
+
+                    SqlDataAdapter adpt = new SqlDataAdapter(cmd);
+                    adpt.Fill(dt);
+                }
+                return dt;
+            }
+            finally
+            {
+                dt.Dispose();
+            }
+        }
 
         public int DISCARD_TEMP_DB(int BrandID, int type)
         {
@@ -164,6 +209,26 @@ namespace TeamSports.DAL
             }
         }
 
+        public async Task<int> TruncateAllData()
+        {
+            int i = 0;
+            try
+            {
+                using (SqlConnection con = new SqlConnection(BasicUtilities.GetConnectionString()))
+                {
+                    con.Open();
+                    SqlCommand cmd = new SqlCommand("truncate_tables", con);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.CommandTimeout = 500; 
+                    i = cmd.ExecuteNonQuery();
+                }
+                return i;
+            }
+            catch (Exception ex)
+            {
+                return 0;
+            }
+        }
 
         public int INSERT_DATA(string _OP)
         {
@@ -185,7 +250,7 @@ namespace TeamSports.DAL
                 return 0;
             }
         }
-        public int UPDATE_EAN_DATA(string brandID)
+        public int UPDATE_EAN_DATA(string brandID, string _OP)
         {
             int i = 0;
             try
@@ -196,6 +261,7 @@ namespace TeamSports.DAL
                     SqlCommand cmd = new SqlCommand("UPDATE_EAN_DATA", con);
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@brandID", brandID);
+                    cmd.Parameters.AddWithValue("@op", _OP);
                     i = cmd.ExecuteNonQuery();
                 }
                 return i;

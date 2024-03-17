@@ -622,24 +622,24 @@
                         'success'
                     )
 
-                    Swal.fire({
-                        title: "Do you want to add check box in main sheet?",
-                        icon: "question",
-                        showDenyButton: true,
-                        confirmButtonText: "Yes",
-                        denyButtonText: `No`, allowOutsideClick: false,
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            swal.showLoading();
-                            window.location.href = "/Authorize";
-                        }
-                        else {
-                            location.reload();
-                        }
-                    });
+                    // Swal.fire({
+                    //     title: "Do you want to add check box in main sheet?",
+                    //     icon: "question",
+                    //     showDenyButton: true,
+                    //     confirmButtonText: "Yes",
+                    //     denyButtonText: `No`, allowOutsideClick: false,
+                    // }).then((result) => {
+                    //     if (result.isConfirmed) {
+                    //         swal.showLoading();
+                    //         window.location.href = "/Authorize";
+                    //     }
+                    //     else {
+                    //         location.reload();
+                    //     }
+                    // });
 
 
-
+                    location.reload();
 
                 }
             },

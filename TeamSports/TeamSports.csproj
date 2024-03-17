@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="EPPlus" Version="7.0.10" />
     <PackageReference Include="Google.Apis.Script.v1" Version="1.64.0.3223" />
     <PackageReference Include="Google.Apis.Sheets.v4" Version="1.63.0.3148" />
     <PackageReference Include="System.Data.OleDb" Version="7.0.0" />
