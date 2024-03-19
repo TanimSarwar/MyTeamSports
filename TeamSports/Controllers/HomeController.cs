@@ -2513,20 +2513,25 @@ namespace TeamSports.Controllers
 
                 if (brand == "All")
                 {
-                    string spreadsheetId1 = config.GetSection("SpreadSheetID").Value.ToString();
-                    string SheetName1 = config.GetSection("SheetName").Value.ToString();
+                    if (filetype == "product")
+ {
+     string spreadsheetId1 = config.GetSection("SpreadSheetID").Value.ToString();
+     string SheetName1 = config.GetSection("SheetName").Value.ToString();
 
-                    var range1 = $"{SheetName1}!A{2}:U";
-                    var requestBody = new ClearValuesRequest();
-                    var deleteRequest = _googleSheetValues.Clear(requestBody, spreadsheetId1, range1);
-                    await deleteRequest.ExecuteAsync();
-
-                    spreadsheetId1 = config.GetSection("EanSpreadSheetID").Value.ToString();
-                    SheetName1 = config.GetSection("EanSheetName").Value.ToString();
-                    range1 = $"{SheetName1}!A{2}:I";
-                    requestBody = new ClearValuesRequest();
-                    deleteRequest = _googleSheetValues.Clear(requestBody, spreadsheetId1, range1);
-                    await deleteRequest.ExecuteAsync();
+     var range1 = $"{SheetName1}!A{2}:U";
+     var requestBody = new ClearValuesRequest();
+     var deleteRequest = _googleSheetValues.Clear(requestBody, spreadsheetId1, range1);
+     await deleteRequest.ExecuteAsync();
+ }
+ else
+ {
+     string spreadsheetId1 = config.GetSection("EanSpreadSheetID").Value.ToString();
+     string SheetName1 = config.GetSection("EanSheetName").Value.ToString();
+     string range1 = $"{SheetName1}!A{2}:I";
+     var requestBody = new ClearValuesRequest();
+     var deleteRequest = _googleSheetValues.Clear(requestBody, spreadsheetId1, range1);
+     await deleteRequest.ExecuteAsync();
+ }
                 }
 
 
