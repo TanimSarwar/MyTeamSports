@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Download data or Sync with google sheet";
 }
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css" />
@@ -17,7 +17,7 @@
                     <th style='text-align:center;'>EAN Count  <a onclick=downloadFile('All','ean') class="btn btn-sm btn-icon btn-bg-light btn-icon-info btn-hover-info" title="Download All EAN Data"><i class="menu-icon flaticon2-download"></i></a></th>
                     <th style='text-align:center;'>Download</th>
                     <th style='text-align:center;'>Google Sheet Sync
-                        <a onclick=SyncGoogleSheet('All','ean') class="btn btn-sm btn-icon btn-bg-light btn-icon-warning btn-hover-warning" title="Sync All Product Data"><i class="menu-icon flaticon2-download"></i></a>
+                        <a onclick=SyncGoogleSheet('All','product') class="btn btn-sm btn-icon btn-bg-light btn-icon-warning btn-hover-warning" title="Sync All Product Data"><i class="menu-icon flaticon2-download"></i></a>
 
                         <a onclick=SyncGoogleSheet('All','ean') class="btn btn-sm btn-icon btn-bg-light btn-icon-danger btn-hover-danger" title="Sync All EAN Data"><i class="menu-icon flaticon2-download"></i></a>
 
