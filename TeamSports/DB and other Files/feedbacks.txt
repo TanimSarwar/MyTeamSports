@@ -1,0 +1,40 @@
+Here is my feedback:
+
+--1) price format should be standardized. In some brands, the price decimal is a european "," and in other its the US "." It should all be standardized to a comma ",".
+
+--2) Generally, the products should appear in the main sheet as grouped by brand first, then sorted by product number.
+
+--3) Many brands such as Erima and Hummel seem to have a " ' " symbol before the product number. Its hard to see but when you click the cell or copy it you will see it. Not sure where this is coming from, but since its with multiple brands it cant be from the brand files.
+
+4) ADIDAS
+--a) The gender logic conversion hasnt been applied to Adidas data. For example "Erwachsene" and "Herren should be "Unisex". At the end, there should only 3 values in the entire gender column of all brands: Unisex, Damen, and Kinder.
+All other genders should be mapped to one of these.
+--b) manufacturer color spectrum codes (column T) should have "0" as value instead of being empty, just as you did with ERIMA
+
+5)ERIMA
+--a) Product description should be mapped to column L (as stated in the mapping file)
+--b) Gender mapping is missing, should be column AA (as stated in the mapping file)
+
+6) HUMMEL
+--a) Gender column seems to have changed. In the mapping file it is P, but in new file it is Q. Long-term we need to expose the mapping to user so that we can adjust ourselves, but for now we need a quick fix. Please adjust the mapping. You can consider this a change request and bill it.
+--l--b) Product names/titles are all capital. Can we convert them to Camel Case? Not urgent, but would be good long-term. Also this was not a requirement so you can consider it a change request (if it is easily doable, if not leave it)
+--c) Base price seems to have changed. In the mapping file it is AN, but now it is AQ. Again, we need quick fix. You can consider it a change request.
+--d) product text mapping seems to have changed. Should be column "AL" You can consider this a change request.
+--e) for this brand we are writing some weird text in the "variant image" column. Not sure why. This should be removed.--
+
+7) JAKO
+--a) you said here the mapping of the base price changed. But it didnt, its still column L as stated in the mapping file
+
+8) NIKE
+--a) Here we have an issue, which is that the parsed product numbers actually contain color codes. BecausWe need to apply some parsing, which parses from the front until the first "-" symbol. This is the product number. Everything after the first "-" is the color code.
+
+
+M
+myteamshop
+myteamshop
+Jan 14, 2024, 2:03 PM
+
+
+This is all my feedback. I would like to jump on a call, so that we can discuss. It is obvious that this project is suffering from a lack of communication and I dont know why you dont want to have calls. This is wasting your time and mine, and now we are near a disaster. Lets have a call please.
+
+PS: the last feedback of NIKE: Since NIKE is a crawler file, I know you cant apply different logics to it than other crawler files. So I want you to consider it a brand file, that way we can give it its own logic. The difference is just one small parsing operation has described in 8) a ). Of course this can also can be considered a change request. You can bill for these change requests, it is not your fault that the mapping has changed or that with NIKE we need an additional logic.

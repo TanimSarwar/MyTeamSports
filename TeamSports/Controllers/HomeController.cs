@@ -1,4 +1,5 @@
 ﻿using Google.Apis.Auth.OAuth2;
+using Google.Apis.Requests;
 using Google.Apis.Script.v1.Data;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
@@ -16,6 +17,7 @@ using System.Diagnostics;
 using System.Drawing.Drawing2D;
 using System.Drawing.Printing;
 using System.Globalization;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using TeamSports.DAL;
@@ -114,7 +116,7 @@ namespace TeamSports.Controllers
                         break;
                     case ".xlsx": //Excel 07 and above.
                         conString = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" + filePath + ";Extended Properties='Excel 12.0;IMEX=1;HDR=NO'";
-                        
+
 
                         break;
                     case ".csv": //csv.
@@ -204,7 +206,7 @@ namespace TeamSports.Controllers
                     ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
                     using (var package = new ExcelPackage(new FileInfo(filePath)))
-                    { 
+                    {
                         ExcelWorksheet worksheet = package.Workbook.Worksheets[0];
 
                         for (int row = worksheet.Dimension.Start.Row; row <= worksheet.Dimension.End.Row; row++)
@@ -212,7 +214,7 @@ namespace TeamSports.Controllers
                             DataRow newRow = dt.NewRow();
                             for (int col = worksheet.Dimension.Start.Column; col <= worksheet.Dimension.End.Column; col++)
                             {
-                               
+
 
                                 if (row == worksheet.Dimension.Start.Row)
                                 {
@@ -243,7 +245,7 @@ namespace TeamSports.Controllers
                             {
                                 dt.Rows.Add(newRow);
                             }
-                        } 
+                        }
                     }
                 }
 
@@ -264,7 +266,7 @@ namespace TeamSports.Controllers
 
                 if (dt.Rows.Count > 0)
                 {
-                   
+
 
                     var cleanedDataTable = new DataTable();
                     var FinalcleanedDataTable = new DataTable();
@@ -2497,6 +2499,154 @@ namespace TeamSports.Controllers
 
 
 
+        [HttpPost]
+        public async Task<JsonResult> SyncGoogleSheet(string brand, string filetype)
+        {
+            try
+            {
+
+
+                var config = _basicUtilities.GetConfiguration();
+
+
+
+
+                if (brand == "All")
+                {
+                    string spreadsheetId1 = config.GetSection("SpreadSheetID").Value.ToString();
+                    string SheetName1 = config.GetSection("SheetName").Value.ToString();
+
+                    var range1 = $"{SheetName1}!A{2}:U";
+                    var requestBody = new ClearValuesRequest();
+                    var deleteRequest = _googleSheetValues.Clear(requestBody, spreadsheetId1, range1);
+                    await deleteRequest.ExecuteAsync();
+
+                    spreadsheetId1 = config.GetSection("EanSpreadSheetID").Value.ToString();
+                    SheetName1 = config.GetSection("EanSheetName").Value.ToString();
+                    range1 = $"{SheetName1}!A{2}:I";
+                    requestBody = new ClearValuesRequest();
+                    deleteRequest = _googleSheetValues.Clear(requestBody, spreadsheetId1, range1);
+                    await deleteRequest.ExecuteAsync();
+                }
+
+
+
+
+
+
+                string[] Scopes = { SheetsService.Scope.Spreadsheets };
+                string ApplicationName = "My Team Shop";
+                string jsonCredentialsPath = "credentials.json";
+                GoogleCredential credential;
+              
+
+
+
+
+                using (var stream = new System.IO.FileStream(jsonCredentialsPath, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                {
+                    credential = GoogleCredential.FromStream(stream).CreateScoped(Scopes);
+                }
+                var service = new SheetsService(new BaseClientService.Initializer()
+                {
+                    HttpClientInitializer = credential,
+                    ApplicationName = ApplicationName,
+                }); 
+                string settingNameForSheetID = filetype.ToLower() == "product" ? "SpreadSheetID" : "EanSpreadSheetID";
+                string settingNameForSheetName = filetype.ToLower() == "product" ? "SheetName" : "EanSheetName";
+                
+                string spreadsheetId = config.GetSection(settingNameForSheetID).Value.ToString();
+                string sheetName = config.GetSection(settingNameForSheetName).Value.ToString();
+                string range = filetype.ToLower() == "product" ? sheetName + "!A2:U" : sheetName + "!A2:I";
+     
+                int sheetId = 0;
+
+                SpreadsheetsResource.GetRequest request = service.Spreadsheets.Get(spreadsheetId);
+                Spreadsheet spreadsheet = request.Execute();
+                foreach (Sheet sheet in spreadsheet.Sheets)
+                {
+                    if (sheet.Properties.Title == sheetName)
+                    {
+                        sheetId = (int)sheet.Properties.SheetId;
+                        Console.WriteLine("Sheet Name: {0}, Sheet Id: {1}", sheet.Properties.Title, sheetId);
+                        break; // Exit the loop once the sheet is found
+                    }
+                }
+
+
+
+
+
+
+
+
+
+                DataTable dataTable = await _dal.GetData(brand, filetype);
+                var requests = new List<Request>();
+                foreach (DataRow row in dataTable.Rows)
+                { 
+                    var rowData = new List<CellData>(); 
+                    foreach (var item in row.ItemArray)
+                    { 
+                        var cellData = new CellData
+                        {
+                            UserEnteredValue = new ExtendedValue { StringValue = item.ToString() }
+                        };
+                        rowData.Add(cellData);
+                    } 
+                    requests.Add(new Request
+                    {
+                        AppendCells = new AppendCellsRequest
+                        {
+                            SheetId = sheetId, 
+                            Rows = new List<RowData> { new RowData { Values = rowData } },
+                            Fields = "*"  
+                        }
+                    });
+                }
+
+
+
+                requests.Add(new Request
+                {
+                    DeleteDuplicates = new DeleteDuplicatesRequest
+                    {
+                        Range = new GridRange
+                        {
+                            SheetId = sheetId, // Sheet ID
+                            StartRowIndex = 0, // Start row index
+                            StartColumnIndex = 0, // Start column index
+                            EndRowIndex = 500000, // End row index (adjust according to your range)
+                            EndColumnIndex = 21 // End column index (adjust according to your range)
+                        }
+                    }
+                });
+
+
+                const int batchSizeLimit = 90000;
+                for (int i = 0; i < requests.Count; i += batchSizeLimit)
+                {
+                    var chunk = requests.Skip(i).Take(batchSizeLimit);
+                    var batchUpdateRequest = new BatchUpdateSpreadsheetRequest
+                    {
+                        Requests = chunk.ToList()
+                    };
+
+                    var response = service.Spreadsheets.BatchUpdate(batchUpdateRequest, spreadsheetId).Execute();
+                    Console.WriteLine(response);
+                }
+ 
+
+                return Json(true);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return Json(false);
+            }
+        }
+
+
 
 
         public async Task<IActionResult> test()
@@ -2528,14 +2678,14 @@ namespace TeamSports.Controllers
                 string spreadsheetId = config.GetSection("SpreadSheetID").Value.ToString();
                 string SheetName = config.GetSection("SheetName").Value.ToString();
 
-                var range = $"{SheetName}!A{3}:AZ";
+                var range = $"{SheetName}!A{2}:U";
                 var requestBody = new ClearValuesRequest();
                 var deleteRequest = _googleSheetValues.Clear(requestBody, spreadsheetId, range);
                 await deleteRequest.ExecuteAsync();
 
                 spreadsheetId = config.GetSection("EanSpreadSheetID").Value.ToString();
                 SheetName = config.GetSection("EanSheetName").Value.ToString();
-                range = $"{SheetName}!A{2}:J";
+                range = $"{SheetName}!A{2}:I";
                 requestBody = new ClearValuesRequest();
                 deleteRequest = _googleSheetValues.Clear(requestBody, spreadsheetId, range);
                 await deleteRequest.ExecuteAsync();
@@ -2565,17 +2715,6 @@ namespace TeamSports.Controllers
             return true;
         }
 
-
-
-
-
-
-
-
-
-
-
-
         [HttpGet]
         public async Task<ActionResult> GetData(string brand, string filetype)
         {
@@ -2585,7 +2724,7 @@ namespace TeamSports.Controllers
                 DateTime DateTime = DateTime.Now;
                 string RequestDateTime = DateTime.ToString("yyyyMMddHHmmss");
 
-                string fileName = brand + "_" + filetype + "_"+ RequestDateTime + ".xlsx";
+                string fileName = brand + "_" + filetype + "_" + RequestDateTime + ".xlsx";
                 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
                 using (var package = new ExcelPackage())
                 {
@@ -2612,12 +2751,6 @@ namespace TeamSports.Controllers
                 return NoContent();
             }
         }
-
-
-
-
-
-
 
         private byte[] DataTableToExcel(DataTable dataTable)
         {

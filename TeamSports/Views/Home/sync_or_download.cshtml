@@ -16,7 +16,12 @@
                     <th style='text-align:center;'>Product Count <a onclick=downloadFile('All','product') class="btn btn-sm btn-icon btn-bg-light btn-icon-warning btn-hover-warning" title="Download All Product Data"><i class="menu-icon flaticon2-download"></i></a></th>
                     <th style='text-align:center;'>EAN Count  <a onclick=downloadFile('All','ean') class="btn btn-sm btn-icon btn-bg-light btn-icon-info btn-hover-info" title="Download All EAN Data"><i class="menu-icon flaticon2-download"></i></a></th>
                     <th style='text-align:center;'>Download</th>
-                    <th style='text-align:center;'>Google Sheet Sync</th>
+                    <th style='text-align:center;'>Google Sheet Sync
+                        <a onclick=SyncGoogleSheet('All','ean') class="btn btn-sm btn-icon btn-bg-light btn-icon-warning btn-hover-warning" title="Sync All Product Data"><i class="menu-icon flaticon2-download"></i></a>
+
+                        <a onclick=SyncGoogleSheet('All','ean') class="btn btn-sm btn-icon btn-bg-light btn-icon-danger btn-hover-danger" title="Sync All EAN Data"><i class="menu-icon flaticon2-download"></i></a>
+
+                    </th>
                 </tr>
             </thead>
             <tbody id="databody"></tbody>
@@ -68,7 +73,7 @@
                         resultBody += "<td style='text-align:center;'>" + response[i]?.PROD_COUNT + "</td>";
                         resultBody += "<td style='text-align:center;'>" + response[i]?.EAN_COUNT + "</td>";
                         resultBody += "<td style='text-align:center;'> <a onclick=downloadFile('" + response[i]?.BRAND_NAME + "','product') class=\"btn btn-sm btn-icon btn-bg-light btn-icon-warning btn-hover-warning\" title=\"Download Product Data of " + response[i]?.BRAND_NAME + "\"><i class=\"menu-icon flaticon2-download\"></i></a> <a  onclick=downloadFile('" + response[i]?.BRAND_NAME + "','ean') class=\"btn btn-sm btn-icon btn-bg-light btn-icon-info btn-hover-info\" title=\"Download EAN Data of " + response[i]?.BRAND_NAME + "\"><i class=\"menu-icon flaticon2-download\"></i></a></td>";
-                        resultBody += "<td style='text-align:center;'> <a class=\"btn btn-sm btn-icon btn-bg-light btn-icon-warning btn-hover-warning\" title=\"Sync with google sheet\"><i class=\"menu-icon flaticon2-download\"></i></a></td>";
+                        resultBody += "<td style='text-align:center;'> <a onclick=SyncGoogleSheet('" + response[i]?.BRAND_NAME + "','product')  class=\"btn btn-sm btn-icon btn-bg-light btn-icon-warning btn-hover-warning\" title=\"Sync product with google sheet\"><i class=\"menu-icon flaticon2-download\"></i></a> <a  onclick=SyncGoogleSheet('" + response[i]?.BRAND_NAME + "','ean')  class=\"btn btn-sm btn-icon btn-bg-light btn-icon-danger btn-hover-danger\" title=\"Sync EAN with google sheet\"><i class=\"menu-icon flaticon2-download\"></i></a></td>";
                         resultBody += "</tr>";
                     }
                     $("#databody").html(resultBody);
@@ -79,5 +84,25 @@
     }
     const downloadFile = (brand, filetype) => {
         window.location.href = "../../home/getdata?brand=" + brand + "&filetype=" + filetype;
+    }
+    const SyncGoogleSheet = (brand, filetype) => {
+        swal.showLoading();
+        $.ajax({
+            url: "/Home/SyncGoogleSheet",
+            type: "POST",
+            data: {
+                brand:brand,
+                filetype: filetype
+            },
+            dataType: "json",
+            success: function (response) {
+                swal.close();
+                if (response){
+                    swal.fire(filetype?.toUpperCase() + " Data for " + brand + " has been uploaded to google sheet successfully");
+                }else{
+                    swal.fire("Please try again");
+                }
+            }
+        });
     }
 </script>
